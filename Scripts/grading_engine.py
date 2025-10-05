@@ -19,6 +19,14 @@ except ImportError:
     ProcessedEssay = Any
     Paragraph = Any
     Metadata = Any
+
+# --------- Import rubric parser ----------
+try:
+    from rubric_parser_prompt import RubricParser, ParseResult
+except ImportError:
+    # Fallback for when rubric parser is not available
+    RubricParser = Any
+    ParseResult = Any
 OPENAI_MODEL = os.environ.get("RUBRICHECK_MODEL", "gpt-4o-mini")
 
 # Read API key from api.txt file
@@ -33,23 +41,22 @@ def get_api_key_from_file(file_path: str = r"C:\Users\Leo\AI projects\_api.txt",
     except FileNotFoundError:
         raise FileNotFoundError(f"API file not found at {file_path}")
 
-# Set the API key from file
-api_file = r"C:\Users\Leo\AI projects\_api.txt"
-keyname = "RubricParserPrompt"
-api_key = get_api_key_from_file()
-os.environ["OPENAI_API_KEY"] = api_key
-client = OpenAI(api_key=api_key)
+# Initialize client lazily to avoid import-time errors
+client = None
 
-# Verify the API key is set
-try:
-    api_key = os.environ["OPENAI_API_KEY"]
-    if api_key == "your-api-key-here":
-        print("⚠️  Please replace 'your-api-key-here' with your actual OpenAI API key!")
-    else:
-        print("✅ API key is set and ready to use!")
-        print(f"🔑 Key starts with: {api_key[:8]}...")
-except KeyError:
-    print("❌ API key not found in environment variables")
+def get_client():
+    """Get OpenAI client, initializing it if needed."""
+    global client
+    if client is None:
+        try:
+            api_key = get_api_key_from_file()
+            os.environ["OPENAI_API_KEY"] = api_key
+            client = OpenAI(api_key=api_key)
+        except Exception as e:
+            print(f"⚠️  Warning: Could not load API key: {e}")
+            # Fallback to environment variable
+            client = OpenAI()
+    return client
 
 # ===============================
 # Data structures (expected inputs)
@@ -126,8 +133,8 @@ ESSAY METADATA
 - Word count: {metadata.word_count}
 - Language: {metadata.language_detected}
 - Readability: {metadata.readability.flesch_reading_ease:.1f} (Flesch Reading Ease)
-- Quote ratio: {metadata.quote_ratio:.1%}
-- Sections: {metadata.section_count}
+- Quote ratio: {metadata.quote_char_ratio:.1%}
+- Sections: {len(metadata.sections)}
 """
 
     return f"""
@@ -197,7 +204,7 @@ def llm_json(prompt: str, system: str) -> Dict[str, Any]:
     Calls the OpenAI chat completion and attempts to parse JSON only.
     We ask the model to output ONLY JSON. If it fails, we rethrow with the raw text.
     """
-    resp = client.chat.completions.create(
+    resp = get_client().chat.completions.create(
         model=OPENAI_MODEL,
         temperature=0.2,
         messages=[
@@ -426,8 +433,8 @@ def grade_essay(
         "essay_length": processed_essay.metadata.word_count,
         "language": processed_essay.metadata.language_detected,
         "readability_score": processed_essay.metadata.readability.flesch_reading_ease,
-        "quote_ratio": processed_essay.metadata.quote_ratio,
-        "section_count": processed_essay.metadata.section_count,
+        "quote_char_ratio": processed_essay.metadata.quote_char_ratio,
+        "section_count": len(processed_essay.metadata.sections),
         "warnings": processed_essay.warnings
     }
     
@@ -443,6 +450,242 @@ def grade_essay(
     )
 
 
+def convert_rubric_format(parsed_rubric: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Convert rubric from rubric_parser_prompt.py format to grading_engine.py format.
+    
+    Args:
+        parsed_rubric: Rubric dictionary from RubricParser
+        
+    Returns:
+        Converted rubric dictionary for grading engine
+    """
+    converted_criteria = []
+    
+    for criterion in parsed_rubric.get("criteria", []):
+        # Convert descriptor_by_level to descriptors format
+        descriptors = {}
+        for level, description in criterion.get("descriptor_by_level", {}).items():
+            descriptors[level] = description
+        
+        # Create converted criterion
+        converted_criterion = {
+            "id": criterion.get("name", "").lower().replace(" ", "_").replace("&", "and"),
+            "name": criterion.get("name", ""),
+            "descriptors": descriptors,
+            "valid_levels": list(descriptors.keys()),
+            "weight": criterion.get("weight", 1.0),
+            "level_scale_note": f"{' > '.join(descriptors.keys())}"
+        }
+        converted_criteria.append(converted_criterion)
+    
+    # Determine scale type and create grading configuration
+    scale_type = parsed_rubric.get("scale", {}).get("type", "categorical")
+    levels = parsed_rubric.get("scale", {}).get("levels", [])
+    
+    if scale_type == "categorical" and levels:
+        # Create categorical points mapping
+        categorical_points_map = {}
+        for i, level in enumerate(levels):
+            categorical_points_map[level] = len(levels) - i
+        
+        converted_rubric = {
+            "criteria": converted_criteria,
+            "grading": {
+                "numeric": True,
+                "letter_bands": [
+                    {"min": 90, "max": 100, "letter": "A+"},
+                    {"min": 85, "max": 89.99, "letter": "A"},
+                    {"min": 80, "max": 84.99, "letter": "A-"},
+                    {"min": 70, "max": 79.99, "letter": "B"},
+                    {"min": 60, "max": 69.99, "letter": "C"},
+                    {"min": 0, "max": 59.99, "letter": "D or below"}
+                ],
+                "categorical_points_map": categorical_points_map
+            }
+        }
+    else:
+        # Numeric scale
+        min_val = parsed_rubric.get("scale", {}).get("min", 0)
+        max_val = parsed_rubric.get("scale", {}).get("max", 100)
+        
+        converted_rubric = {
+            "criteria": converted_criteria,
+            "grading": {
+                "numeric": True,
+                "letter_bands": [
+                    {"min": 90, "max": 100, "letter": "A+"},
+                    {"min": 85, "max": 89.99, "letter": "A"},
+                    {"min": 80, "max": 84.99, "letter": "A-"},
+                    {"min": 70, "max": 79.99, "letter": "B"},
+                    {"min": 60, "max": 69.99, "letter": "C"},
+                    {"min": 0, "max": 59.99, "letter": "D or below"}
+                ]
+            }
+        }
+    
+    return converted_rubric
+
+
+def parse_rubric_file(rubric_path: str, model: str = "gpt-4o-mini") -> Dict[str, Any]:
+    """
+    Parse a rubric file using the RubricParser and return the structured rubric.
+    
+    Args:
+        rubric_path: Path to the rubric file (DOCX, TXT)
+        model: OpenAI model to use for parsing
+        
+    Returns:
+        Parsed rubric dictionary
+        
+    Raises:
+        ValueError: If parsing fails
+    """
+    try:
+        # Get API key and initialize the rubric parser
+        api_key = get_api_key_from_file()
+        parser = RubricParser(api_key=api_key, model=model)
+        
+        # Parse the rubric file
+        result = parser.parse_file(rubric_path)
+        
+        if result.success:
+            print(f"✅ Rubric parsed successfully from {rubric_path}")
+            print(f"📊 Found {parser.get_criteria_count(result)} criteria")
+            print(f"📏 Scale type: {parser.get_scale_type(result)}")
+            confidence = parser.get_confidence(result)
+            print(f"🎯 Confidence: {confidence:.2f}" if confidence is not None else "🎯 Confidence: N/A")
+            
+            # Print warnings if any
+            if result.warnings:
+                print(f"⚠️  Warnings ({len(result.warnings)}):")
+                for warning in result.warnings:
+                    print(f"  • {warning}")
+            
+            # Convert the rubric format for grading engine
+            converted_rubric = convert_rubric_format(result.rubric)
+            return converted_rubric
+        else:
+            raise ValueError(f"Failed to parse rubric: {', '.join(result.errors)}")
+            
+    except Exception as e:
+        raise ValueError(f"Error parsing rubric file {rubric_path}: {str(e)}")
+
+
+def grade_essay_with_rubric_file(
+    rubric_path: str,
+    processed_essay: ProcessedEssay,
+    max_span_chars: int = 240,
+    model: str = "gpt-4o-mini"
+) -> GradeSummary:
+    """
+    Grade an essay using a rubric file (parses the rubric first, then grades).
+    
+    Args:
+        rubric_path: Path to the rubric file
+        processed_essay: Preprocessed essay data
+        max_span_chars: Maximum characters for evidence spans
+        model: OpenAI model to use for rubric parsing
+        
+    Returns:
+        GradeSummary with grading results
+    """
+    # Parse and convert the rubric file
+    rubric = parse_rubric_file(rubric_path, model)
+    
+    # Grade the essay using the converted rubric
+    return grade_essay(rubric, processed_essay, max_span_chars)
+
+
+def complete_grading_workflow(
+    rubric_path: str,
+    essay_path: str,
+    max_span_chars: int = 240,
+    model: str = "gpt-4o-mini"
+) -> Dict[str, Any]:
+    """
+    Complete grading workflow: parse rubric + preprocess essay + grade essay.
+    
+    Args:
+        rubric_path: Path to the rubric file (DOCX, TXT)
+        essay_path: Path to the essay file
+        max_span_chars: Maximum characters for evidence spans
+        model: OpenAI model to use
+        
+    Returns:
+        Complete grading results with rubric info, essay metadata, and grades
+    """
+    try:
+        # Step 1: Parse the rubric
+        print("🔍 Step 1: Parsing rubric...")
+        rubric = parse_rubric_file(rubric_path, model)  # Already converted
+        
+        # Step 2: Preprocess the essay
+        print("🔍 Step 2: Preprocessing essay...")
+        from essay_preprocessor import EssayPreprocessor, PreprocessOptions
+        
+        # Read the essay file first
+        with open(essay_path, 'r', encoding='utf-8', errors='ignore') as f:
+            essay_text = f.read()
+        
+        preprocessor = EssayPreprocessor()
+        options = PreprocessOptions()
+        processed_essay = preprocessor.run(essay_text, options)
+        
+        print(f"✅ Essay preprocessed: {processed_essay.metadata.word_count} words, "
+              f"{len(processed_essay.paragraphs)} paragraphs")
+        
+        # Step 3: Grade the essay
+        print("🔍 Step 3: Grading essay...")
+        grade_summary = grade_essay(rubric, processed_essay, max_span_chars)
+        
+        # Step 4: Generate insights
+        print("🔍 Step 4: Generating insights...")
+        essay_insights = generate_essay_insights(processed_essay)
+        
+        # Compile complete results
+        results = {
+            "rubric_info": {
+                "title": "Parsed Rubric",  # Converted rubric doesn't have title
+                "scale_type": "categorical",  # Converted to categorical
+                "criteria_count": len(rubric.get("criteria", [])),
+                "grading_config": rubric.get("grading", {})
+            },
+            "essay_metadata": {
+                "word_count": processed_essay.metadata.word_count,
+                "language": processed_essay.metadata.language_detected,
+                "readability": processed_essay.metadata.readability.flesch_reading_ease,
+                "quote_char_ratio": processed_essay.metadata.quote_char_ratio,
+                "section_count": len(processed_essay.metadata.sections)
+            },
+            "grading_results": {
+                "numeric_score": grade_summary.numeric_score,
+                "letter_grade": grade_summary.letter,
+                "categorical_points": grade_summary.categorical_points,
+                "per_criterion": [
+                    {
+                        "criterion_id": result.criterion_id,
+                        "level": result.level,
+                        "justification": result.justification,
+                        "evidence_spans": result.evidence_spans,
+                        "actionable_suggestion": result.actionable_suggestion,
+                        "refuse": result.refuse
+                    }
+                    for result in grade_summary.per_criterion
+                ]
+            },
+            "essay_insights": essay_insights,
+            "flags": grade_summary.notes
+        }
+        
+        print("✅ Complete grading workflow finished!")
+        return results
+        
+    except Exception as e:
+        print(f"❌ Error in complete grading workflow: {e}")
+        raise
+
+
 def generate_essay_insights(processed_essay: ProcessedEssay) -> Dict[str, Any]:
     """Generate insights about the essay based on preprocessor metadata."""
     metadata = processed_essay.metadata
@@ -450,8 +693,8 @@ def generate_essay_insights(processed_essay: ProcessedEssay) -> Dict[str, Any]:
     insights = {
         "length_assessment": _assess_essay_length(metadata.word_count),
         "readability_assessment": _assess_readability(metadata.readability.flesch_reading_ease),
-        "structure_assessment": _assess_structure(metadata.section_count, len(processed_essay.paragraphs)),
-        "quote_usage": _assess_quote_usage(metadata.quote_ratio),
+        "structure_assessment": _assess_structure(len(metadata.sections), len(processed_essay.paragraphs)),
+        "quote_usage": _assess_quote_usage(metadata.quote_char_ratio),
         "language_notes": _assess_language(metadata.language_detected),
         "overall_quality_indicators": _assess_overall_quality(processed_essay)
     }
@@ -501,13 +744,13 @@ def _assess_structure(section_count: int, paragraph_count: int) -> Dict[str, Any
         return {"level": "excellent", "message": "Essay has excellent structural organization."}
 
 
-def _assess_quote_usage(quote_ratio: float) -> Dict[str, Any]:
+def _assess_quote_usage(quote_char_ratio: float) -> Dict[str, Any]:
     """Assess quote usage in the essay."""
-    if quote_ratio < 0.05:
+    if quote_char_ratio < 0.05:
         return {"level": "low", "message": "Essay uses few quotes. Consider incorporating more evidence to support your arguments."}
-    elif quote_ratio < 0.15:
+    elif quote_char_ratio < 0.15:
         return {"level": "moderate", "message": "Essay has moderate quote usage. Good balance of original analysis and evidence."}
-    elif quote_ratio < 0.30:
+    elif quote_char_ratio < 0.30:
         return {"level": "high", "message": "Essay uses many quotes. Consider adding more original analysis."}
     else:
         return {"level": "very_high", "message": "Essay relies heavily on quotes. Focus more on your own analysis and interpretation."}
@@ -534,7 +777,7 @@ def _assess_overall_quality(processed_essay: ProcessedEssay) -> Dict[str, Any]:
         quality_indicators.append("Very few paragraphs - may lack development")
     
     # Check for quotes
-    if processed_essay.metadata.quote_ratio > 0:
+    if processed_essay.metadata.quote_char_ratio > 0:
         quality_indicators.append("Contains quoted material")
     
     return {
@@ -542,65 +785,245 @@ def _assess_overall_quality(processed_essay: ProcessedEssay) -> Dict[str, Any]:
         "overall_assessment": "Good" if len(quality_indicators) < 2 else "Needs attention"
     }
 
-# # ===============================
-# # Example usage
-# # ===============================
-# if __name__ == "__main__":
-#     import json
 
-#     # Example rubric (minimal):
-#     rubric = {
-#         "criteria": [
-#             {
-#                 "id": "thesis",
-#                 "name": "Thesis & Focus",
-#                 "descriptors": {
-#                     "Excellent": "Clear, arguable thesis driving the essay.",
-#                     "Good": "Thesis is present but somewhat broad or unevenly maintained.",
-#                     "Fair": "Thesis is unclear, implied, or inconsistently applied.",
-#                     "Poor": "No discernible thesis or focus."
-#                 },
-#                 "valid_levels": ["Excellent","Good","Fair","Poor"],
-#                 "weight": 0.25,
-#                 "level_scale_note": "Excellent > Good > Fair > Poor"
-#             },
-#             {
-#                 "id": "evidence",
-#                 "name": "Use of Evidence",
-#                 "descriptors": {
-#                     "Excellent": "Integrates specific, well-chosen evidence; accurately cited; analysis is insightful.",
-#                     "Good": "Evidence is generally apt; some analysis; minor lapses.",
-#                     "Fair": "Evidence is limited, vague, or inconsistently analyzed.",
-#                     "Poor": "Little to no relevant evidence; analysis missing."
-#                 },
-#                 "valid_levels": ["Excellent","Good","Fair","Poor"],
-#                 "weight": 0.25,
-#                 "level_scale_note": "Excellent > Good > Fair > Poor"
-#             }
-#         ],
-#         "grading": {
-#             "numeric": True,
-#             "letter_bands": [
-#                 {"min": 90, "max": 100, "letter": "A+"},
-#                 {"min": 85, "max": 89.99, "letter": "A"},
-#                 {"min": 80, "max": 84.99, "letter": "A-"},
-#                 {"min": 0, "max": 79.99, "letter": "B or below"}
-#             ],
-#             "categorical_points_map": {"Excellent": 4, "Good": 3, "Fair": 2, "Poor": 1}
-#         }
-#     }
+# ===============================
+# Example usage with RubricParser integration
+# ===============================
 
-#     essay_paragraphs = [
-#         "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets.",
-#         "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain.",
-#         "Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment.",
-#     ]
+def example_with_rubric_file():
+    """Example showing how to use the grading engine with rubric files."""
+    try:
+        # Example usage with rubric file
+        rubric_path = "test_file/test_rubric.docx"  # Your rubric file
+        essay_path = "test_file/sample_essay.txt"    # Your essay file
+        
+        print("🚀 Running complete grading workflow...")
+        results = complete_grading_workflow(rubric_path, essay_path)
+        
+        print("\n📊 Results Summary:")
+        print(f"Rubric: {results['rubric_info']['title']}")
+        print(f"Scale: {results['rubric_info']['scale_type']}")
+        print(f"Criteria: {results['rubric_info']['criteria_count']}")
+        print(f"Essay: {results['essay_metadata']['word_count']} words")
+        print(f"Grade: {results['grading_results']['letter_grade']} ({results['grading_results']['numeric_score']})")
+        
+        return results
+        
+    except Exception as e:
+        print(f"❌ Example failed: {e}")
+        return None
 
-#     summary = grade_essay(rubric, essay_paragraphs, max_span_chars=180)
-#     print(json.dumps({
-#         "per_criterion": [r.__dict__ for r in summary.per_criterion],
-#         "numeric_score": summary.numeric_score,
-#         "letter": summary.letter,
-#         "categorical_points": summary.categorical_points,
-#         "notes": summary.notes
-#     }, indent=2, ensure_ascii=False))
+
+def example_with_parsed_rubric():
+    """Example showing how to use the grading engine with a parsed rubric."""
+    try:
+        # Parse a rubric file
+        rubric_path = "test_file/test_rubric.docx"
+        rubric = parse_rubric_file(rubric_path)  # Already converted
+        
+        # Create a sample essay (in practice, you'd load from file)
+        sample_essay_text = """
+        The impact of social media on modern communication has been profound. 
+        While it has connected people across the globe, it has also created new challenges 
+        in maintaining meaningful relationships. This essay will explore both the positive 
+        and negative effects of social media on interpersonal communication.
+        """
+        
+        # Preprocess the essay
+        from essay_preprocessor import EssayPreprocessor, PreprocessOptions
+        preprocessor = EssayPreprocessor()
+        options = PreprocessOptions()
+        processed_essay = preprocessor.run(sample_essay_text, options)
+        
+        # Grade the essay
+        summary = grade_essay(rubric, processed_essay)
+        
+        print("📊 Grading Results:")
+        print(f"  Numeric Score: {summary.numeric_score}")
+        print(f"  Letter Grade: {summary.letter}")
+        print(f"  Categorical Points: {summary.categorical_points}")
+        
+        print("\n📝 Per-Criterion Results:")
+        for result in summary.per_criterion:
+            print(f"  {result.criterion_id}: {result.level}")
+            print(f"    Justification: {result.justification}")
+            print(f"    Evidence: {len(result.evidence_spans)} spans")
+            print(f"    Suggestion: {result.actionable_suggestion}")
+            print()
+        
+        return summary
+        
+    except Exception as e:
+        print(f"❌ Example failed: {e}")
+        return None
+
+
+# ===============================
+# Main Example Usage
+# ===============================
+
+def main():
+    """Main function demonstrating complete grading workflow."""
+    print("🚀 RubriCheck Grading Engine - Example Usage")
+    print("=" * 60)
+    
+    try:
+        # Example 1: Complete workflow with files
+        print("\n📋 Example 1: Complete Grading Workflow")
+        print("-" * 40)
+        
+        rubric_path = "test_file/test_rubric.docx"
+        essay_path = "test_file/test_essay.txt"
+        
+        # Check if files exist
+        if not os.path.exists(rubric_path):
+            print(f"⚠️  Rubric file not found: {rubric_path}")
+            print("💡 Please ensure you have a rubric file at this path")
+            rubric_path = None
+        
+        if not os.path.exists(essay_path):
+            print(f"⚠️  Essay file not found: {essay_path}")
+            print("💡 Please ensure you have an essay file at this path")
+            essay_path = None
+        
+        if rubric_path and essay_path:
+            print(f"📄 Using rubric: {rubric_path}")
+            print(f"📄 Using essay: {essay_path}")
+            
+            #Run complete workflow
+            results = complete_grading_workflow(rubric_path, essay_path)
+            
+            print("\n📊 Final Results:")
+            print(f"  Rubric: {results['rubric_info']['title']}")
+            print(f"  Scale: {results['rubric_info']['scale_type']}")
+            print(f"  Criteria: {results['rubric_info']['criteria_count']}")
+            print(f"  Essay: {results['essay_metadata']['word_count']} words")
+            print(f"  Grade: {results['grading_results']['letter_grade']} ({results['grading_results']['numeric_score']})")
+            
+            # Show per-criterion results
+            print("\n📝 Per-Criterion Results:")
+            for result in results['grading_results']['per_criterion']:
+                print(f"  • {result['criterion_id']}: {result['level']}")
+                print(f"    Justification: {result['justification'][:100]}...")
+                print(f"    Evidence: {len(result['evidence_spans'])} spans")
+                print(f"    Suggestion: {result['actionable_suggestion']}")
+                print()
+        
+        # Example 2: Step-by-step workflow
+        print("\n📋 Example 2: Step-by-Step Workflow")
+        print("-" * 40)
+        
+        # Create sample rubric data
+        sample_rubric = {
+            "title": "Sample Essay Rubric",
+            "scale": {
+                "type": "categorical",
+                "levels": ["Excellent", "Good", "Fair", "Poor"]
+            },
+            "criteria": [
+                {
+                    "id": "thesis",
+                    "name": "Thesis & Focus",
+                    "descriptor_by_level": {
+                        "Excellent": "Clear, arguable thesis driving the essay",
+                        "Good": "Thesis is present but somewhat broad",
+                        "Fair": "Thesis is vague or inconsistently maintained",
+                        "Poor": "No clear thesis or thesis is off-topic"
+                    },
+                    "weight": 3
+                },
+                {
+                    "id": "evidence",
+                    "name": "Evidence & Support",
+                    "descriptor_by_level": {
+                        "Excellent": "Strong, relevant evidence; well-integrated",
+                        "Good": "Good evidence; mostly relevant",
+                        "Fair": "Limited or somewhat irrelevant evidence",
+                        "Poor": "Lacks evidence or off-topic"
+                    },
+                    "weight": 2
+                }
+            ],
+            "source_parse": {
+                "method": "narrative",
+                "confidence": 1.0,
+                "warnings": []
+            }
+        }
+        
+        # Create sample essay text
+        sample_essay_text = """
+        The impact of social media on modern communication has been profound and far-reaching. 
+        While platforms like Facebook, Twitter, and Instagram have connected people across the globe, 
+        they have also created new challenges in maintaining meaningful relationships and authentic 
+        communication. This essay will explore both the positive and negative effects of social media 
+        on interpersonal communication, examining how these platforms have transformed the way we 
+        interact with one another.
+        
+        On the positive side, social media has democratized communication, allowing individuals 
+        to share their thoughts and experiences with a global audience. It has enabled people to 
+        maintain connections with friends and family members who live far away, and has provided 
+        a platform for marginalized voices to be heard. However, the constant connectivity has 
+        also led to issues such as information overload, decreased attention spans, and the 
+        proliferation of misinformation.
+        
+        In conclusion, while social media has undoubtedly changed the landscape of communication, 
+        it is up to individuals and society as a whole to navigate these changes responsibly and 
+        ensure that these tools enhance rather than diminish our ability to connect meaningfully 
+        with others.
+        """
+        
+        print("📝 Using sample rubric and essay text...")
+        
+        # Preprocess the essay
+        from essay_preprocessor import EssayPreprocessor, PreprocessOptions
+        preprocessor = EssayPreprocessor()
+        options = PreprocessOptions()
+        processed_essay = preprocessor.run(sample_essay_text, options)
+        
+        print(f"✅ Essay preprocessed: {processed_essay.metadata.word_count} words, "
+              f"{len(processed_essay.paragraphs)} paragraphs")
+        
+        # Convert the sample rubric to grading engine format
+        converted_rubric = convert_rubric_format(sample_rubric)
+        
+        # Grade the essay
+        summary = grade_essay(converted_rubric, processed_essay)
+        
+        print("\n📊 Grading Results:")
+        print(f"  Numeric Score: {summary.numeric_score}")
+        print(f"  Letter Grade: {summary.letter}")
+        print(f"  Categorical Points: {summary.categorical_points}")
+        
+        print("\n📝 Per-Criterion Results:")
+        for result in summary.per_criterion:
+            print(f"  • {result.criterion_id}: {result.level}")
+            print(f"    Justification: {result.justification}")
+            print(f"    Evidence: {len(result.evidence_spans)} spans")
+            print(f"    Suggestion: {result.actionable_suggestion}")
+            print()
+        
+        # Generate insights
+        insights = generate_essay_insights(processed_essay)
+        print("🔍 Essay Insights:")
+        print(f"  Length Assessment: {insights['length_assessment']['message']}")
+        print(f"  Readability: {insights['readability_assessment']['message']}")
+        print(f"  Structure: {insights['structure_assessment']['message']}")
+        print(f"  Quote Usage: {insights['quote_usage']['message']}")
+        
+        print("\n✅ Example completed successfully!")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Error in main example: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+if __name__ == "__main__":
+    success = main()
+    if success:
+        print("\n🎉 All examples completed successfully!")
+    else:
+        print("\n❌ Some examples failed. Check the error messages above.")
