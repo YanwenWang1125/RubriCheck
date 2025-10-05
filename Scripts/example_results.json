@@ -1,0 +1,224 @@
+{
+  "pipeline_info": {
+    "rubric_file": "test_file/test_rubric.docx",
+    "essay_file": "test_essay.txt",
+    "timestamp": "c:\\Users\\Leo\\AI projects\\RubriCheck\\Scripts",
+    "version": "1.0"
+  },
+  "essay_metadata": {
+    "word_count": 53,
+    "sentence_count": 3,
+    "paragraph_count": 3,
+    "character_count": 446,
+    "language_detected": "en",
+    "readability": {
+      "flesch_reading_ease": 8.529748427672956,
+      "flesch_kincaid_grade": 16.458490566037742,
+      "gunning_fog": null,
+      "ari": null,
+      "coleman_liau": null
+    },
+    "quote_ratio": 0.0,
+    "section_count": 0,
+    "chunk_count": 1
+  },
+  "rubric_info": {
+    "title": null,
+    "scale_type": "categorical",
+    "criteria_count": 6,
+    "source_parse": {
+      "method": "narrative",
+      "confidence": 1.0,
+      "warnings": []
+    }
+  },
+  "grading_results": {
+    "per_criterion": [
+      {
+        "criterion_id": "criterion_0",
+        "valid_levels": [
+          "Excellent",
+          "Good",
+          "Fair",
+          "Poor"
+        ],
+        "level": "Good",
+        "justification": "The essay presents a clear thesis regarding the importance of renewable energy to national security. While the focus is mostly maintained, there are moments where the discussion could be more tightly aligned with the thesis.",
+        "evidence_spans": [
+          {
+            "paragraph_index": 0,
+            "quote": "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets."
+          }
+        ],
+        "actionable_suggestion": "Ensure that all arguments directly support the thesis to maintain a tighter focus throughout the essay.",
+        "refuse": false,
+        "reason": "",
+        "low_confidence": false,
+        "consistency_explanation": "The chosen level 'Good' aligns well with the descriptor language. The justification states that the essay presents a clear thesis and mostly maintains focus, which corresponds to the descriptor for 'Good'. The evidence span supports the thesis clearly, indicating that the essay meets the expectations for this level.",
+        "agreement_flag": "ok",
+        "tie_break_used": false
+      },
+      {
+        "criterion_id": "criterion_1",
+        "valid_levels": [
+          "Excellent",
+          "Good",
+          "Fair",
+          "Poor"
+        ],
+        "level": "Good",
+        "justification": "The essay presents a mostly logical structure with a clear argument about renewable energy and national security. However, some transitions between points could be clearer.",
+        "evidence_spans": [
+          {
+            "paragraph_index": 0,
+            "quote": "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets."
+          },
+          {
+            "paragraph_index": 1,
+            "quote": "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain."
+          },
+          {
+            "paragraph_index": 2,
+            "quote": "Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment."
+          }
+        ],
+        "actionable_suggestion": "Improve transitions between paragraphs to enhance the flow of ideas.",
+        "refuse": false,
+        "reason": "",
+        "low_confidence": false,
+        "consistency_explanation": "The chosen level 'Good' aligns well with the descriptor language. The justification states that the essay has a mostly logical structure and presents a clear argument, which corresponds to the 'Good' descriptor. Additionally, the mention of unclear transitions supports the assessment that while the structure is mostly logical, it is not excellent, thus fitting the 'Good' level appropriately.",
+        "agreement_flag": "ok",
+        "tie_break_used": false
+      },
+      {
+        "criterion_id": "criterion_2",
+        "valid_levels": [
+          "Excellent",
+          "Good",
+          "Fair",
+          "Poor"
+        ],
+        "level": "Good",
+        "justification": "The essay provides good evidence regarding renewable energy's impact on national security and cost considerations. However, some evidence could be more directly tied to the main argument.",
+        "evidence_spans": [
+          {
+            "paragraph_index": 1,
+            "quote": "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain."
+          },
+          {
+            "paragraph_index": 2,
+            "quote": "this essay demonstrates recent cost curves and policy mechanisms that offset initial investment."
+          }
+        ],
+        "actionable_suggestion": "Include more specific examples or data that directly link renewable energy to national security benefits.",
+        "refuse": false,
+        "reason": "",
+        "low_confidence": false,
+        "consistency_explanation": "The chosen level 'Good' aligns well with the descriptor language, as the justification notes that the essay provides good evidence regarding renewable energy's impact, which is mostly relevant. The evidence spans provided support this assessment, showing relevant information but indicating that some evidence could be more directly tied to the main argument, which is consistent with the 'Good' descriptor.",
+        "agreement_flag": "ok",
+        "tie_break_used": false
+      },
+      {
+        "criterion_id": "criterion_3",
+        "valid_levels": [
+          "Excellent",
+          "Good",
+          "Fair",
+          "Poor"
+        ],
+        "level": "Good",
+        "justification": "The essay provides some analysis regarding the impact of renewable energy on national security and cost considerations, but it primarily explains the evidence without delving deeply into implications or broader contexts.",
+        "evidence_spans": [
+          {
+            "paragraph_index": 0,
+            "quote": "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets."
+          },
+          {
+            "paragraph_index": 1,
+            "quote": "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain."
+          },
+          {
+            "paragraph_index": 2,
+            "quote": "this essay demonstrates recent cost curves and policy mechanisms that offset initial investment."
+          }
+        ],
+        "actionable_suggestion": "Incorporate deeper analysis of the implications of renewable energy on national security and address potential counterarguments more thoroughly.",
+        "refuse": false,
+        "reason": "",
+        "low_confidence": false,
+        "consistency_explanation": "The chosen level 'Good' aligns well with the descriptor language. The justification states that the essay provides some analysis regarding renewable energy's impact on national security and cost considerations, which matches the descriptor's emphasis on 'some analysis' while also noting that it 'mostly explains evidence.' The evidence spans provided support this assessment, as they show instances of analysis related to national security and cost, but do not indicate a deep exploration of broader implications, consistent with the 'Good' descriptor.",
+        "agreement_flag": "ok",
+        "tie_break_used": false
+      },
+      {
+        "criterion_id": "criterion_4",
+        "valid_levels": [
+          "Excellent",
+          "Good",
+          "Fair",
+          "Poor"
+        ],
+        "level": "Good",
+        "justification": "The writing is generally clear and conveys the main arguments effectively, though there are minor awkwardnesses in phrasing that could be improved for better clarity.",
+        "evidence_spans": [
+          {
+            "paragraph_index": 0,
+            "quote": "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets."
+          },
+          {
+            "paragraph_index": 1,
+            "quote": "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain."
+          }
+        ],
+        "actionable_suggestion": "Revise sentences for conciseness to enhance clarity and engagement.",
+        "refuse": false,
+        "reason": "",
+        "low_confidence": false,
+        "consistency_explanation": "The chosen level 'Good' aligns well with the descriptor language, as the justification notes that the writing is generally clear and effectively conveys main arguments, which matches the descriptor's mention of 'Generally clear; minor awkwardness.' The evidence spans provided support this assessment, showing clarity in the main points while acknowledging minor phrasing issues.",
+        "agreement_flag": "ok",
+        "tie_break_used": false
+      },
+      {
+        "criterion_id": "criterion_5",
+        "valid_levels": [
+          "Excellent",
+          "Good",
+          "Fair",
+          "Poor"
+        ],
+        "level": "Good",
+        "justification": "The essay contains few minor errors that do not affect understanding. The grammar and mechanics are mostly correct, allowing the reader to grasp the arguments presented without confusion.",
+        "evidence_spans": [
+          {
+            "paragraph_index": 0,
+            "quote": "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets."
+          },
+          {
+            "paragraph_index": 1,
+            "quote": "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain."
+          },
+          {
+            "paragraph_index": 2,
+            "quote": "Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment."
+          }
+        ],
+        "actionable_suggestion": "Proofread the essay to correct any minor grammatical errors and ensure consistent punctuation throughout.",
+        "refuse": false,
+        "reason": "",
+        "low_confidence": false,
+        "consistency_explanation": "The chosen level 'Good' aligns well with the descriptor language, as the justification states that the essay contains few minor errors that do not affect understanding. This matches the descriptor for 'Good,' which indicates that while there are some errors, they do not impede comprehension. The evidence spans provided support this assessment, showing that the content is coherent and the arguments are clear despite minor issues.",
+        "agreement_flag": "ok",
+        "tie_break_used": false
+      }
+    ],
+    "numeric_score": 85.0,
+    "letter_grade": null,
+    "categorical_points": null,
+    "reliability_flags": {
+      "any_refusals": false,
+      "any_low_confidence": false,
+      "any_needs_review": false
+    }
+  },
+  "warnings": []
+}
