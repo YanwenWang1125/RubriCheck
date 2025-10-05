@@ -10,6 +10,15 @@ from dataclasses import dataclass, field
 # --------- OpenAI client ----------
 # pip install openai>=1.0.0
 from openai import OpenAI
+
+# --------- Import essay preprocessor types ----------
+try:
+    from essay_preprocessor import ProcessedEssay, Paragraph, Metadata
+except ImportError:
+    # Fallback for when essay_preprocessor is not available
+    ProcessedEssay = Any
+    Paragraph = Any
+    Metadata = Any
 OPENAI_MODEL = os.environ.get("RUBRICHECK_MODEL", "gpt-4o-mini")
 
 # Read API key from api.txt file
@@ -76,8 +85,8 @@ except KeyError:
 #   }
 # }
 
-# Essay paragraphs (privacy-processed, chunked upstream if needed):
-# essay_paragraphs = ["Para 0 text...", "Para 1 text...", ...]
+# Expected input: ProcessedEssay from essay_preprocessor
+# Contains rich metadata: paragraphs, sections, quotes, readability, language, etc.
 
 # ===============================
 # Prompt templates
@@ -101,14 +110,25 @@ CRITERION_OUTPUT_KEYS = [
 
 def make_criterion_user_prompt(
     criterion: Dict[str, Any],
-    essay_paragraphs: List[str],
+    processed_essay: ProcessedEssay,
     max_span_chars: int = 240
 ) -> str:
-    # Only pass relevant chunk: here we pass full paragraphs; upstream you may pass
-    # paragraph indices likely relevant to this criterion. Keep it simple & auditable.
+    # Extract paragraphs with rich metadata
+    essay_paragraphs = [p.text for p in processed_essay.paragraphs if p.text.strip()]
     essay_block = "\n".join([f"[{i}] {p}" for i, p in enumerate(essay_paragraphs)])
     valid_levels_list = criterion["valid_levels"]
     descriptors = criterion["descriptors"]
+
+    # Include essay metadata for better context
+    metadata = processed_essay.metadata
+    essay_context = f"""
+ESSAY METADATA
+- Word count: {metadata.word_count}
+- Language: {metadata.language_detected}
+- Readability: {metadata.readability.flesch_reading_ease:.1f} (Flesch Reading Ease)
+- Quote ratio: {metadata.quote_ratio:.1%}
+- Sections: {metadata.section_count}
+"""
 
     return f"""
 You will grade ONE criterion only.
@@ -121,6 +141,8 @@ CRITERION
 
 DESCRIPTORS (for this criterion only)
 {descriptors}
+
+{essay_context}
 
 ESSAY (paragraph-indexed)
 {essay_block}
@@ -136,6 +158,7 @@ REQUIREMENTS
    - "quote" (string, <= {max_span_chars} chars, must appear verbatim in that paragraph)
 6) "actionable_suggestion": one concrete, specific improvement step for this criterion.
 7) Safety: Never invent content; only quote from the essay paragraphs provided.
+8) Consider essay metadata (word count, readability, language) in your evaluation.
 
 Return ONLY the JSON object—no commentary.
 """
@@ -316,11 +339,11 @@ def compute_categorical_aggregate(per: List[CriterionResult], rubric: Dict[str, 
 
 def evaluate_one_criterion(
     criterion: Dict[str, Any],
-    essay_paragraphs: List[str],
+    processed_essay: ProcessedEssay,
     max_span_chars: int = 240
 ) -> CriterionResult:
     system = SYSTEM_BASE.format(max_span_chars=max_span_chars)
-    base_prompt = make_criterion_user_prompt(criterion, essay_paragraphs, max_span_chars)
+    base_prompt = make_criterion_user_prompt(criterion, processed_essay, max_span_chars)
 
     # Agreement check: run two slightly perturbed versions
     out1 = llm_json(make_agreement_variant_prompt(base_prompt, "A"), system)
@@ -376,12 +399,12 @@ def evaluate_one_criterion(
 
 def grade_essay(
     rubric: Dict[str, Any],
-    essay_paragraphs: List[str],
+    processed_essay: ProcessedEssay,
     max_span_chars: int = 240
 ) -> GradeSummary:
     results: List[CriterionResult] = []
     for crit in rubric["criteria"]:
-        res = evaluate_one_criterion(crit, essay_paragraphs, max_span_chars=max_span_chars)
+        res = evaluate_one_criterion(crit, processed_essay, max_span_chars=max_span_chars)
         results.append(res)
 
     # Aggregations
@@ -397,74 +420,187 @@ def grade_essay(
         "any_low_confidence": any(r.low_confidence for r in results),
         "any_needs_review": any(r.agreement_flag != "ok" for r in results),
     }
+    
+    # Add essay metadata insights
+    metadata_insights = {
+        "essay_length": processed_essay.metadata.word_count,
+        "language": processed_essay.metadata.language_detected,
+        "readability_score": processed_essay.metadata.readability.flesch_reading_ease,
+        "quote_ratio": processed_essay.metadata.quote_ratio,
+        "section_count": processed_essay.metadata.section_count,
+        "warnings": processed_essay.warnings
+    }
+    
+    # Combine flags with metadata insights
+    combined_notes = {**flags, "essay_metadata": metadata_insights}
 
     return GradeSummary(
         per_criterion=results,
         numeric_score=None if numeric_score is None else round(numeric_score, 2),
         letter=letter,
         categorical_points=None if categorical_points is None else round(categorical_points, 2),
-        notes=flags
+        notes=combined_notes
     )
 
-# ===============================
-# Example usage
-# ===============================
-if __name__ == "__main__":
-    import json
 
-    # Example rubric (minimal):
-    rubric = {
-        "criteria": [
-            {
-                "id": "thesis",
-                "name": "Thesis & Focus",
-                "descriptors": {
-                    "Excellent": "Clear, arguable thesis driving the essay.",
-                    "Good": "Thesis is present but somewhat broad or unevenly maintained.",
-                    "Fair": "Thesis is unclear, implied, or inconsistently applied.",
-                    "Poor": "No discernible thesis or focus."
-                },
-                "valid_levels": ["Excellent","Good","Fair","Poor"],
-                "weight": 0.25,
-                "level_scale_note": "Excellent > Good > Fair > Poor"
-            },
-            {
-                "id": "evidence",
-                "name": "Use of Evidence",
-                "descriptors": {
-                    "Excellent": "Integrates specific, well-chosen evidence; accurately cited; analysis is insightful.",
-                    "Good": "Evidence is generally apt; some analysis; minor lapses.",
-                    "Fair": "Evidence is limited, vague, or inconsistently analyzed.",
-                    "Poor": "Little to no relevant evidence; analysis missing."
-                },
-                "valid_levels": ["Excellent","Good","Fair","Poor"],
-                "weight": 0.25,
-                "level_scale_note": "Excellent > Good > Fair > Poor"
-            }
-        ],
-        "grading": {
-            "numeric": True,
-            "letter_bands": [
-                {"min": 90, "max": 100, "letter": "A+"},
-                {"min": 85, "max": 89.99, "letter": "A"},
-                {"min": 80, "max": 84.99, "letter": "A-"},
-                {"min": 0, "max": 79.99, "letter": "B or below"}
-            ],
-            "categorical_points_map": {"Excellent": 4, "Good": 3, "Fair": 2, "Poor": 1}
-        }
+def generate_essay_insights(processed_essay: ProcessedEssay) -> Dict[str, Any]:
+    """Generate insights about the essay based on preprocessor metadata."""
+    metadata = processed_essay.metadata
+    
+    insights = {
+        "length_assessment": _assess_essay_length(metadata.word_count),
+        "readability_assessment": _assess_readability(metadata.readability.flesch_reading_ease),
+        "structure_assessment": _assess_structure(metadata.section_count, len(processed_essay.paragraphs)),
+        "quote_usage": _assess_quote_usage(metadata.quote_ratio),
+        "language_notes": _assess_language(metadata.language_detected),
+        "overall_quality_indicators": _assess_overall_quality(processed_essay)
+    }
+    
+    return insights
+
+
+def _assess_essay_length(word_count: int) -> Dict[str, Any]:
+    """Assess essay length and provide feedback."""
+    if word_count < 200:
+        return {"level": "too_short", "message": "Essay is quite short. Consider expanding your arguments with more detail and examples."}
+    elif word_count < 500:
+        return {"level": "short", "message": "Essay is on the shorter side. You could develop your ideas further."}
+    elif word_count < 1000:
+        return {"level": "good", "message": "Essay has a good length for developing your arguments."}
+    elif word_count < 2000:
+        return {"level": "long", "message": "Essay is quite long. Consider tightening your arguments for clarity."}
+    else:
+        return {"level": "very_long", "message": "Essay is very long. Consider breaking into sections or tightening focus."}
+
+
+def _assess_readability(flesch_score: Optional[float]) -> Dict[str, Any]:
+    """Assess essay readability."""
+    if flesch_score is None:
+        return {"level": "unknown", "message": "Readability score not available."}
+    elif flesch_score < 30:
+        return {"level": "very_difficult", "message": "Essay is very difficult to read. Consider simplifying sentence structure."}
+    elif flesch_score < 50:
+        return {"level": "difficult", "message": "Essay is somewhat difficult to read. Consider using shorter sentences."}
+    elif flesch_score < 70:
+        return {"level": "standard", "message": "Essay has standard readability for academic writing."}
+    elif flesch_score < 80:
+        return {"level": "fairly_easy", "message": "Essay is fairly easy to read."}
+    else:
+        return {"level": "easy", "message": "Essay is very easy to read. Consider adding more sophisticated vocabulary."}
+
+
+def _assess_structure(section_count: int, paragraph_count: int) -> Dict[str, Any]:
+    """Assess essay structure."""
+    if section_count == 0 and paragraph_count < 3:
+        return {"level": "poor", "message": "Essay lacks clear structure. Consider adding an introduction, body paragraphs, and conclusion."}
+    elif section_count == 0 and paragraph_count < 5:
+        return {"level": "basic", "message": "Essay has basic structure but could benefit from more organization."}
+    elif section_count > 0 or paragraph_count >= 5:
+        return {"level": "good", "message": "Essay shows good structural organization."}
+    else:
+        return {"level": "excellent", "message": "Essay has excellent structural organization."}
+
+
+def _assess_quote_usage(quote_ratio: float) -> Dict[str, Any]:
+    """Assess quote usage in the essay."""
+    if quote_ratio < 0.05:
+        return {"level": "low", "message": "Essay uses few quotes. Consider incorporating more evidence to support your arguments."}
+    elif quote_ratio < 0.15:
+        return {"level": "moderate", "message": "Essay has moderate quote usage. Good balance of original analysis and evidence."}
+    elif quote_ratio < 0.30:
+        return {"level": "high", "message": "Essay uses many quotes. Consider adding more original analysis."}
+    else:
+        return {"level": "very_high", "message": "Essay relies heavily on quotes. Focus more on your own analysis and interpretation."}
+
+
+def _assess_language(language: str) -> Dict[str, Any]:
+    """Assess language usage."""
+    if language != "en":
+        return {"level": "non_english", "message": f"Essay is in {language}. Consider providing an English translation for better evaluation."}
+    else:
+        return {"level": "english", "message": "Essay is in English, which is appropriate for evaluation."}
+
+
+def _assess_overall_quality(processed_essay: ProcessedEssay) -> Dict[str, Any]:
+    """Assess overall essay quality indicators."""
+    quality_indicators = []
+    
+    # Check for warnings
+    if processed_essay.warnings:
+        quality_indicators.append(f"Processing warnings: {len(processed_essay.warnings)}")
+    
+    # Check paragraph structure
+    if len(processed_essay.paragraphs) < 3:
+        quality_indicators.append("Very few paragraphs - may lack development")
+    
+    # Check for quotes
+    if processed_essay.metadata.quote_ratio > 0:
+        quality_indicators.append("Contains quoted material")
+    
+    return {
+        "indicators": quality_indicators,
+        "overall_assessment": "Good" if len(quality_indicators) < 2 else "Needs attention"
     }
 
-    essay_paragraphs = [
-        "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets.",
-        "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain.",
-        "Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment.",
-    ]
+# # ===============================
+# # Example usage
+# # ===============================
+# if __name__ == "__main__":
+#     import json
 
-    summary = grade_essay(rubric, essay_paragraphs, max_span_chars=180)
-    print(json.dumps({
-        "per_criterion": [r.__dict__ for r in summary.per_criterion],
-        "numeric_score": summary.numeric_score,
-        "letter": summary.letter,
-        "categorical_points": summary.categorical_points,
-        "notes": summary.notes
-    }, indent=2, ensure_ascii=False))
+#     # Example rubric (minimal):
+#     rubric = {
+#         "criteria": [
+#             {
+#                 "id": "thesis",
+#                 "name": "Thesis & Focus",
+#                 "descriptors": {
+#                     "Excellent": "Clear, arguable thesis driving the essay.",
+#                     "Good": "Thesis is present but somewhat broad or unevenly maintained.",
+#                     "Fair": "Thesis is unclear, implied, or inconsistently applied.",
+#                     "Poor": "No discernible thesis or focus."
+#                 },
+#                 "valid_levels": ["Excellent","Good","Fair","Poor"],
+#                 "weight": 0.25,
+#                 "level_scale_note": "Excellent > Good > Fair > Poor"
+#             },
+#             {
+#                 "id": "evidence",
+#                 "name": "Use of Evidence",
+#                 "descriptors": {
+#                     "Excellent": "Integrates specific, well-chosen evidence; accurately cited; analysis is insightful.",
+#                     "Good": "Evidence is generally apt; some analysis; minor lapses.",
+#                     "Fair": "Evidence is limited, vague, or inconsistently analyzed.",
+#                     "Poor": "Little to no relevant evidence; analysis missing."
+#                 },
+#                 "valid_levels": ["Excellent","Good","Fair","Poor"],
+#                 "weight": 0.25,
+#                 "level_scale_note": "Excellent > Good > Fair > Poor"
+#             }
+#         ],
+#         "grading": {
+#             "numeric": True,
+#             "letter_bands": [
+#                 {"min": 90, "max": 100, "letter": "A+"},
+#                 {"min": 85, "max": 89.99, "letter": "A"},
+#                 {"min": 80, "max": 84.99, "letter": "A-"},
+#                 {"min": 0, "max": 79.99, "letter": "B or below"}
+#             ],
+#             "categorical_points_map": {"Excellent": 4, "Good": 3, "Fair": 2, "Poor": 1}
+#         }
+#     }
+
+#     essay_paragraphs = [
+#         "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets.",
+#         "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain.",
+#         "Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment.",
+#     ]
+
+#     summary = grade_essay(rubric, essay_paragraphs, max_span_chars=180)
+#     print(json.dumps({
+#         "per_criterion": [r.__dict__ for r in summary.per_criterion],
+#         "numeric_score": summary.numeric_score,
+#         "letter": summary.letter,
+#         "categorical_points": summary.categorical_points,
+#         "notes": summary.notes
+#     }, indent=2, ensure_ascii=False))

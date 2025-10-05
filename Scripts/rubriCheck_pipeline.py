@@ -34,7 +34,7 @@ try:
     from rubric_parser_prompt import parse_rubric_file, demo_parse_rubric
     
     # Import from grading_engine.py
-    from grading_engine import grade_essay, GradeSummary
+    from grading_engine import grade_essay, GradeSummary, generate_essay_insights
     
     print("✅ All modules imported successfully!")
     
@@ -113,9 +113,9 @@ class RubriCheckPipeline:
         """Step 3: Grade essay using grading_engine module."""
         print("🤖 Grading essay with AI...")
         
-        essay_paragraphs = [p.text for p in processed_essay.paragraphs if p.text.strip()]
+        # Pass the full ProcessedEssay object to utilize rich metadata
         converted_rubric = self._convert_rubric_format(rubric)
-        summary = grade_essay(converted_rubric, essay_paragraphs, max_span_chars)
+        summary = grade_essay(converted_rubric, processed_essay, max_span_chars)
         
         print(f"✅ Grading complete: {summary.numeric_score} ({summary.letter})")
         return summary
@@ -166,6 +166,9 @@ class RubriCheckPipeline:
             # Step 3: Grade essay
             grade_summary = self.grade_essay(rubric, processed_essay)
             
+            # Generate essay insights using preprocessor metadata
+            essay_insights = generate_essay_insights(processed_essay)
+            
             # Compile results
             results = {
                 "pipeline_info": {
@@ -175,6 +178,7 @@ class RubriCheckPipeline:
                     "version": "1.0"
                 },
                 "essay_metadata": asdict(processed_essay.metadata),
+                "essay_insights": essay_insights,
                 "rubric_info": {
                     "title": rubric.get('title'),
                     "scale_type": rubric.get('scale', {}).get('type'),

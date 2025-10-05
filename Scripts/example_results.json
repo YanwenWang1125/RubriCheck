@@ -22,16 +22,43 @@
     "section_count": 0,
     "chunk_count": 1
   },
+  "essay_insights": {
+    "length_assessment": {
+      "level": "good",
+      "message": "Essay has a good length for developing your arguments."
+    },
+    "readability_assessment": {
+      "level": "standard",
+      "message": "Essay has standard readability for academic writing."
+    },
+    "structure_assessment": {
+      "level": "poor",
+      "message": "Essay lacks clear structure. Consider adding an introduction, body paragraphs, and conclusion."
+    },
+    "quote_usage": {
+      "level": "low",
+      "message": "Essay uses few quotes. Consider incorporating more evidence to support your arguments."
+    },
+    "language_notes": {
+      "level": "english",
+      "message": "Essay is in English, which is appropriate for evaluation."
+    },
+    "overall_quality_indicators": {
+      "indicators": [
+        "Very few paragraphs - may lack development",
+        "Contains quoted material"
+      ],
+      "overall_assessment": "Needs attention"
+    }
+  },
   "rubric_info": {
     "title": null,
     "scale_type": "categorical",
     "criteria_count": 6,
     "source_parse": {
       "method": "narrative",
-      "confidence": null,
-      "warnings": [
-        "validation: source_parse/confidence: None is not of type 'number'"
-      ]
+      "confidence": 1.0,
+      "warnings": []
     }
   },
   "grading_results": {
@@ -44,8 +71,8 @@
           "Fair",
           "Poor"
         ],
-        "level": "Good",
-        "justification": "The essay presents a clear thesis regarding the impact of social media through Aristotle's philosophy, and maintains focus on this theme throughout. However, some parts of the argument could be more clearly articulated.",
+        "level": "Fair",
+        "justification": "The thesis is present but vague, as it discusses Aristotle's philosophy in relation to social media without a clear, original argument. The focus drifts between personal experiences and philosophical analysis.",
         "evidence_spans": [
           {
             "paragraph_index": 0,
@@ -53,14 +80,14 @@
           },
           {
             "paragraph_index": 1,
-            "quote": "I believe that if it is used responsibly, social media can for sure help people live a better life, even if it’s might not be exactly what Aristotle had in his mind."
+            "quote": "The important thing is to use it thoughtfully and not let it take over our lives."
           }
         ],
-        "actionable_suggestion": "Clarify the thesis statement to make it more specific and ensure that all arguments directly support this thesis throughout the essay.",
+        "actionable_suggestion": "Clarify the thesis statement to present a more original argument about the impact of social media based on Aristotle's philosophy.",
         "refuse": false,
         "reason": "",
         "low_confidence": false,
-        "consistency_explanation": "The chosen level 'Good' aligns well with the descriptor language. The justification states that the essay presents a clear thesis and maintains focus on the theme of social media through Aristotle's philosophy, which matches the descriptor's emphasis on a 'clear thesis' and 'mostly maintained focus'. The mention of parts of the argument needing clearer articulation does not detract significantly from the overall assessment, as it still indicates a coherent thesis and focus.",
+        "consistency_explanation": "The chosen level of 'Fair' aligns well with the descriptor language. The justification accurately reflects that the thesis is present but vague, as it lacks a clear, original argument and the focus drifts, which is consistent with the descriptor's mention of a vague thesis and drifting focus.",
         "agreement_flag": "ok",
         "tie_break_used": false
       },
@@ -73,7 +100,71 @@
           "Poor"
         ],
         "level": "Fair",
-        "justification": "The essay shows some organization, but transitions between ideas are weak and can be confusing. The structure lacks clarity in how points are connected.",
+        "justification": "The essay demonstrates some organization but lacks a clear structure and has weak transitions between ideas. The flow from one point to another is not always smooth, making it difficult to follow the argument.",
+        "evidence_spans": [
+          {
+            "paragraph_index": 0,
+            "quote": "However, on social media people would only post the best side of themselves, which is the best way to get likes, reviews and followers, this often make people pursuit 'fake happiness'."
+          },
+          {
+            "paragraph_index": 0,
+            "quote": "Social media does helps people stay connected; it often focuses on quantity over quality."
+          },
+          {
+            "paragraph_index": 1,
+            "quote": "The important thing is to use it thoughtfully and not let it take over our lives."
+          }
+        ],
+        "actionable_suggestion": "Improve the organization by creating clearer topic sentences for each paragraph and ensuring smoother transitions between ideas.",
+        "refuse": false,
+        "reason": "",
+        "low_confidence": false,
+        "consistency_explanation": "The chosen level 'Fair' aligns with the descriptor language as it accurately reflects the essay's organization and transitions. The justification notes that the essay has some organization but lacks a clear structure and has weak transitions, which corresponds well with the descriptor for 'Fair': 'Some organization; transitions weak'. The evidence spans provided also illustrate the points made in the justification, supporting the assessment of the essay's logical flow.",
+        "agreement_flag": "ok",
+        "tie_break_used": false
+      },
+      {
+        "criterion_id": "criterion_2",
+        "valid_levels": [
+          "Excellent",
+          "Good",
+          "Fair",
+          "Poor"
+        ],
+        "level": "Fair",
+        "justification": "The essay presents some relevant evidence regarding Aristotle's views on social media, but the evidence is limited and lacks depth. The arguments made are somewhat vague and do not strongly support the claims.",
+        "evidence_spans": [
+          {
+            "paragraph_index": 0,
+            "quote": "Aristotle believed in finding a balance between extremes."
+          },
+          {
+            "paragraph_index": 0,
+            "quote": "social media weakens real relationships and makes it harder to form honest connections."
+          },
+          {
+            "paragraph_index": 1,
+            "quote": "the important thing is to use it thoughtfully and not let it take over our lives."
+          }
+        ],
+        "actionable_suggestion": "Incorporate more specific examples or studies that illustrate the impact of social media on relationships and happiness to strengthen the argument.",
+        "refuse": false,
+        "reason": "",
+        "low_confidence": true,
+        "consistency_explanation": "The chosen level 'Fair' suggests limited or somewhat irrelevant evidence, which aligns with the justification stating that the evidence is limited and lacks depth. However, the evidence spans provided include relevant quotes from Aristotle that relate to social media, which could be interpreted as somewhat relevant rather than limited. This creates a contradiction between the descriptor language and the evidence presented.",
+        "agreement_flag": "ok",
+        "tie_break_used": false
+      },
+      {
+        "criterion_id": "criterion_3",
+        "valid_levels": [
+          "Excellent",
+          "Good",
+          "Fair",
+          "Poor"
+        ],
+        "level": "Fair",
+        "justification": "The essay provides some analysis of Aristotle's philosophy in relation to social media, but much of the content is summary and personal reflection rather than deep analytical reasoning.",
         "evidence_spans": [
           {
             "paragraph_index": 0,
@@ -88,71 +179,11 @@
             "quote": "The important thing is to use it thoughtfully and not let it take over our lives."
           }
         ],
-        "actionable_suggestion": "Improve the flow of ideas by using clearer transitions between paragraphs and ensuring each point logically leads to the next.",
-        "refuse": false,
-        "reason": "",
-        "low_confidence": false,
-        "consistency_explanation": "The chosen level 'Fair' aligns with the descriptor language as it indicates some organization and acknowledges weak transitions. The justification provided states that the essay has some organization but lacks clarity in how points are connected, which matches the descriptor's mention of 'some organization; transitions weak'. Therefore, the level is consistent with the descriptor.",
-        "agreement_flag": "ok",
-        "tie_break_used": false
-      },
-      {
-        "criterion_id": "criterion_2",
-        "valid_levels": [
-          "Excellent",
-          "Good",
-          "Fair",
-          "Poor"
-        ],
-        "level": "Fair",
-        "justification": "The essay provides some relevant evidence regarding Aristotle's views on social media, but it lacks depth and coherence in the integration of these ideas. The support is somewhat limited and does not consistently relate back to the main argument.",
-        "evidence_spans": [
-          {
-            "paragraph_index": 0,
-            "quote": "Aristotle believed in finding a balance between extremes."
-          },
-          {
-            "paragraph_index": 0,
-            "quote": "Aristotle is going to argue that social media weakens real relationships and makes it harder to form honest connections."
-          },
-          {
-            "paragraph_index": 1,
-            "quote": "By taking Aristotle’s advice, we can enjoy the benefits of social media and also living a happy and meaningful life."
-          }
-        ],
-        "actionable_suggestion": "Incorporate more specific examples or studies that illustrate the impact of social media on relationships and well-being to strengthen the argument.",
+        "actionable_suggestion": "Incorporate more critical analysis of Aristotle's ideas and how they specifically apply to contemporary social media practices, rather than relying on personal anecdotes.",
         "refuse": false,
         "reason": "",
         "low_confidence": true,
-        "consistency_explanation": "The chosen level 'Fair' suggests limited or somewhat irrelevant evidence, but the justification states that the essay provides 'some relevant evidence' which indicates a degree of relevance. Additionally, the evidence spans provided include quotes that relate to Aristotle's views, suggesting that the evidence is not entirely limited or irrelevant. This creates a contradiction between the level and the justification.",
-        "agreement_flag": "ok",
-        "tie_break_used": false
-      },
-      {
-        "criterion_id": "criterion_3",
-        "valid_levels": [
-          "Excellent",
-          "Good",
-          "Fair",
-          "Poor"
-        ],
-        "level": "Good",
-        "justification": "The essay presents some analysis of social media through Aristotle's philosophy, explaining its effects on happiness and relationships. However, it primarily summarizes these ideas rather than providing deeper insights.",
-        "evidence_spans": [
-          {
-            "paragraph_index": 0,
-            "quote": "Aristotle is going to argue that social media weakens real relationships and makes it harder to form honest connections."
-          },
-          {
-            "paragraph_index": 1,
-            "quote": "By taking Aristotle’s advice, we can enjoy the benefits of social media and also living a happy and meaningful life."
-          }
-        ],
-        "actionable_suggestion": "Incorporate more critical analysis of Aristotle's philosophy in relation to specific examples of social media use to deepen the argument.",
-        "refuse": false,
-        "reason": "",
-        "low_confidence": false,
-        "consistency_explanation": "The chosen level 'Good' aligns with the descriptor language as the essay presents some analysis of social media through Aristotle's philosophy, explaining its effects on happiness and relationships. The justification indicates that while there is some analysis, it primarily summarizes ideas, which fits the 'Good' descriptor of 'Some analysis; mostly explains evidence.'",
+        "consistency_explanation": "The chosen level 'Fair' suggests 'Little analysis; mostly summary', but the justification states that there is 'some analysis' present. This creates a contradiction as 'Fair' implies a predominance of summary over analysis, which may not fully align with the assertion of 'some analysis'. The evidence spans also indicate a focus on summarizing thoughts rather than providing deep analytical reasoning, which could suggest a lower level than 'Fair'.",
         "agreement_flag": "ok",
         "tie_break_used": false
       },
@@ -165,7 +196,7 @@
           "Poor"
         ],
         "level": "Fair",
-        "justification": "The writing is occasionally unclear and contains some awkward phrasing, which detracts from overall clarity. There are instances of wordiness and grammatical errors that make it harder to follow.",
+        "justification": "The writing is occasionally unclear and wordy, making it difficult to follow at times. There are several grammatical errors and awkward phrases that detract from the overall clarity.",
         "evidence_spans": [
           {
             "paragraph_index": 0,
@@ -180,15 +211,15 @@
             "quote": "this often make people pursuit 'fake happiness'."
           },
           {
-            "paragraph_index": 1,
-            "quote": "the important thing is to use it thoughtfully and not let it take over our lives."
+            "paragraph_index": 0,
+            "quote": "Social media does helps people stay connected; it often focuses on quantity over quality."
           }
         ],
-        "actionable_suggestion": "Revise sentences for clarity and conciseness, focusing on eliminating awkward phrasing and grammatical errors.",
+        "actionable_suggestion": "Revise the essay for grammatical accuracy and clarity, focusing on eliminating awkward phrases and ensuring concise expression of ideas.",
         "refuse": false,
         "reason": "",
         "low_confidence": false,
-        "consistency_explanation": "The chosen level 'Fair' aligns well with the descriptor language. The justification notes that the writing is occasionally unclear and contains awkward phrasing, which corresponds with the descriptor's mention of being 'Wordy or occasionally unclear.' Additionally, the evidence spans provided highlight specific instances of confusion and grammatical errors, reinforcing the assessment of 'Fair' as appropriate.",
+        "consistency_explanation": "The chosen level of 'Fair' aligns well with the descriptor language. The justification notes that the writing is occasionally unclear and wordy, which matches the descriptor's mention of being 'Wordy or occasionally unclear.' Additionally, the evidence spans provided highlight specific instances of awkward phrases and grammatical errors, reinforcing the assessment of the writing as hard to follow and confusing at times.",
         "agreement_flag": "ok",
         "tie_break_used": false
       },
@@ -201,40 +232,62 @@
           "Poor"
         ],
         "level": "Fair",
-        "justification": "The essay contains several grammatical errors and awkward phrasing that are somewhat distracting, such as 'the connects of people are allows them' and 'does helps people stay connected'.",
+        "justification": "The essay contains several grammatical errors and awkward phrasing that can be somewhat distracting to the reader. These errors do not completely impede understanding but detract from the overall clarity.",
         "evidence_spans": [
+          {
+            "paragraph_index": 0,
+            "quote": "If Aristotle were to look at the technological aspect of modern world, such as social media."
+          },
           {
             "paragraph_index": 0,
             "quote": "he is going to like how the connects of people are allows them to share ideas much easier."
           },
           {
             "paragraph_index": 0,
-            "quote": "Social media does helps people stay connected; it often focuses on quantity over quality."
+            "quote": "this often make people pursuit “fake happiness”."
           },
           {
             "paragraph_index": 0,
-            "quote": "which defeats the purpose of having fun."
+            "quote": "Social media does helps people stay connected;"
+          },
+          {
+            "paragraph_index": 0,
+            "quote": "I only use WeChat to commutate with my friends"
+          },
+          {
+            "paragraph_index": 1,
+            "quote": "but focusing on my online life could make me spend less time in real life."
+          },
+          {
+            "paragraph_index": 1,
+            "quote": "even if it’s might not be exactly what Aristotle had in his mind."
           }
         ],
-        "actionable_suggestion": "Proofread the essay to correct grammatical errors and improve sentence structure for clarity.",
+        "actionable_suggestion": "Proofread the essay to correct grammatical errors and improve sentence structure for better clarity.",
         "refuse": false,
         "reason": "",
         "low_confidence": false,
-        "consistency_explanation": "The chosen level 'Fair' aligns well with the descriptor language, as the justification notes several grammatical errors and awkward phrasing that are somewhat distracting. This matches the descriptor for 'Fair', which states 'Several errors; somewhat distracting'. The provided evidence spans further support this assessment by highlighting specific examples of errors that affect clarity without completely impeding understanding.",
+        "consistency_explanation": "The chosen level of 'Fair' aligns well with the descriptor language. The justification states that the essay contains several grammatical errors and awkward phrasing that are somewhat distracting, which matches the descriptor's mention of 'several errors; somewhat distracting.' Additionally, the errors are noted as not completely impeding understanding, which is consistent with the 'Fair' level, indicating that while there are issues, they do not entirely hinder comprehension.",
         "agreement_flag": "ok",
         "tie_break_used": false
       }
     ],
-    "numeric_score": 76.25,
+    "numeric_score": 70.0,
     "letter_grade": "B or below",
     "categorical_points": null,
     "reliability_flags": {
       "any_refusals": false,
       "any_low_confidence": true,
-      "any_needs_review": false
+      "any_needs_review": false,
+      "essay_metadata": {
+        "essay_length": 786,
+        "language": "en",
+        "readability_score": 56.43059914787861,
+        "quote_ratio": 0.003105590062111801,
+        "section_count": 0,
+        "warnings": []
+      }
     }
   },
-  "warnings": [
-    "validation: source_parse/confidence: None is not of type 'number'"
-  ]
+  "warnings": []
 }

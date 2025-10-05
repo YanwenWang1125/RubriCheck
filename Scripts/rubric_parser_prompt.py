@@ -376,13 +376,13 @@ def print_rubric_summary(rubric: Dict[str, Any]):
     
     print("=" * 50)
 
-# CLI functionality (only runs when script is executed directly, not in notebook)
-if __name__ == "__main__" and not hasattr(__builtins__, '__IPYTHON__'):
-    import argparse, pprint
-    ap = argparse.ArgumentParser(description="Parse a rubric file into canonical JSON.")
-    ap.add_argument("file", help="Path to rubric: .txt .docx .pdf .png .jpg")
-    ap.add_argument("--model", default="gpt-4.1-mini", help="OpenAI model (supports Structured Outputs).")
-    args = ap.parse_args()
+# # CLI functionality (only runs when script is executed directly, not in notebook)
+# if __name__ == "__main__" and not hasattr(__builtins__, '__IPYTHON__'):
+#     import argparse, pprint
+#     ap = argparse.ArgumentParser(description="Parse a rubric file into canonical JSON.")
+#     ap.add_argument("file", help="Path to rubric: .txt .docx .pdf .png .jpg")
+#     ap.add_argument("--model", default="gpt-4.1-mini", help="OpenAI model (supports Structured Outputs).")
+#     args = ap.parse_args()
 
-    result = parse_rubric_file(args.file, model=args.model)
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+#     result = parse_rubric_file(args.file, model=args.model)
+#     print(json.dumps(result, indent=2, ensure_ascii=False))
