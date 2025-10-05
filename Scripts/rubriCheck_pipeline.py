@@ -34,7 +34,7 @@ try:
     from rubric_parser_prompt import parse_rubric_file, demo_parse_rubric
     
     # Import from grading_engine.py
-    from grading_engine import grade_essay, GradeSummary, generate_essay_insights
+    from grading_engine import grade_essay, GradeSummary, generate_essay_insights, run_grading_example
     
     print("✅ All modules imported successfully!")
     

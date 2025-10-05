@@ -29,34 +29,8 @@ except ImportError:
     ParseResult = Any
 OPENAI_MODEL = os.environ.get("RUBRICHECK_MODEL", "gpt-4o-mini")
 
-# Read API key from api.txt file
-def get_api_key_from_file(file_path: str = r"C:\Users\Leo\AI projects\_api.txt", keyname: str = "RubricParserPrompt") -> str:
-    """Read API key from api.txt file for rubriCheck project."""
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                if line.strip().startswith(f'{keyname}:'):
-                    return line.strip().split(':', 1)[1].strip()
-        raise ValueError("rubriCheck API key not found in file")
-    except FileNotFoundError:
-        raise FileNotFoundError(f"API file not found at {file_path}")
-
-# Initialize client lazily to avoid import-time errors
-client = None
-
-def get_client():
-    """Get OpenAI client, initializing it if needed."""
-    global client
-    if client is None:
-        try:
-            api_key = get_api_key_from_file()
-            os.environ["OPENAI_API_KEY"] = api_key
-            client = OpenAI(api_key=api_key)
-        except Exception as e:
-            print(f"⚠️  Warning: Could not load API key: {e}")
-            # Fallback to environment variable
-            client = OpenAI()
-    return client
+# Import shared utilities
+from utils import get_api_key_from_file, get_openai_client
 
 # ===============================
 # Data structures (expected inputs)
@@ -204,7 +178,7 @@ def llm_json(prompt: str, system: str) -> Dict[str, Any]:
     Calls the OpenAI chat completion and attempts to parse JSON only.
     We ask the model to output ONLY JSON. If it fails, we rethrow with the raw text.
     """
-    resp = get_client().chat.completions.create(
+    resp = get_openai_client().chat.completions.create(
         model=OPENAI_MODEL,
         temperature=0.2,
         messages=[
@@ -527,46 +501,31 @@ def convert_rubric_format(parsed_rubric: Dict[str, Any]) -> Dict[str, Any]:
     return converted_rubric
 
 
+# Import parse_rubric_file from rubric_parser_prompt.py
+from rubric_parser_prompt import parse_rubric_file as _parse_rubric_file
+
 def parse_rubric_file(rubric_path: str, model: str = "gpt-4o-mini") -> Dict[str, Any]:
     """
     Parse a rubric file using the RubricParser and return the structured rubric.
+    This is a wrapper that converts the rubric format for the grading engine.
     
     Args:
         rubric_path: Path to the rubric file (DOCX, TXT)
         model: OpenAI model to use for parsing
         
     Returns:
-        Parsed rubric dictionary
+        Converted rubric dictionary for grading engine
         
     Raises:
         ValueError: If parsing fails
     """
     try:
-        # Get API key and initialize the rubric parser
-        api_key = get_api_key_from_file()
-        parser = RubricParser(api_key=api_key, model=model)
+        # Parse using the original function
+        parsed_rubric = _parse_rubric_file(rubric_path, model)
         
-        # Parse the rubric file
-        result = parser.parse_file(rubric_path)
-        
-        if result.success:
-            print(f"✅ Rubric parsed successfully from {rubric_path}")
-            print(f"📊 Found {parser.get_criteria_count(result)} criteria")
-            print(f"📏 Scale type: {parser.get_scale_type(result)}")
-            confidence = parser.get_confidence(result)
-            print(f"🎯 Confidence: {confidence:.2f}" if confidence is not None else "🎯 Confidence: N/A")
-            
-            # Print warnings if any
-            if result.warnings:
-                print(f"⚠️  Warnings ({len(result.warnings)}):")
-                for warning in result.warnings:
-                    print(f"  • {warning}")
-            
-            # Convert the rubric format for grading engine
-            converted_rubric = convert_rubric_format(result.rubric)
-            return converted_rubric
-        else:
-            raise ValueError(f"Failed to parse rubric: {', '.join(result.errors)}")
+        # Convert the rubric format for grading engine
+        converted_rubric = convert_rubric_format(parsed_rubric)
+        return converted_rubric
             
     except Exception as e:
         raise ValueError(f"Error parsing rubric file {rubric_path}: {str(e)}")
@@ -862,7 +821,7 @@ def example_with_parsed_rubric():
 # Main Example Usage
 # ===============================
 
-def main():
+def run_grading_example():
     """Main function demonstrating complete grading workflow."""
     print("🚀 RubriCheck Grading Engine - Example Usage")
     print("=" * 60)
@@ -1022,7 +981,7 @@ def main():
 
 
 if __name__ == "__main__":
-    success = main()
+    success = run_grading_example()
     if success:
         print("\n🎉 All examples completed successfully!")
     else:

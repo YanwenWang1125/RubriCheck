@@ -150,17 +150,14 @@ class RubricParser:
         Initialize the RubricParser.
         
         Args:
-            api_key: OpenAI API key (if None, will read from environment)
+            api_key: OpenAI API key (if None, will read from file)
             model: OpenAI model to use for parsing
         """
         self.model = model
         self.validator = Draft7Validator(self.RUBRIC_JSON_SCHEMA)
         
-        # Initialize OpenAI client
-        if api_key:
-            self.client = OpenAI(api_key=api_key)
-        else:
-            self.client = OpenAI()  # Uses OPENAI_API_KEY environment variable
+        # Use shared OpenAI client
+        self.client = get_openai_client(api_key)
     
     # PDF and image processing methods removed to avoid fitz import conflicts
     
@@ -511,18 +508,10 @@ def demo_parse_rubric(file_path: str, model: str = "gpt-4o-mini") -> Dict[str, A
         return {}
 
 
-def get_api_key_from_file(file_path: str = r"C:\Users\Leo\AI projects\_api.txt", keyname: str = "RubricParserPrompt") -> str:
-    """Read API key from api.txt file for rubriCheck project."""
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                if line.strip().startswith(f'{keyname}:'):
-                    return line.strip().split(':', 1)[1].strip()
-        raise ValueError("rubriCheck API key not found in file")
-    except FileNotFoundError:
-        raise FileNotFoundError(f"API file not found at {file_path}")
+# Import shared utilities
+from utils import get_api_key_from_file, get_openai_client
 
-def main():
+def run_parser_example():
     """Main function to parse a rubric file."""
     # Manual configuration - modify these values as needed
     file_path = "test_file/test_rubric.docx"  # Path to your rubric file
@@ -559,7 +548,7 @@ def main():
 
 def run_example():
     """Jupyter-safe function to run the example without CLI interference."""
-    return main()
+    return run_parser_example()
 
 # if __name__ == "__main__":
 #    main()
