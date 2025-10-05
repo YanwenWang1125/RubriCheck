@@ -1,0 +1,109 @@
+name: rubriCheck
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  # Core Python
+  - python=3.10
+  
+  # Data processing and analysis
+  - numpy
+  - pandas
+  - scipy
+  
+  # Machine Learning and AI
+  - openai>=1.0.0
+  - transformers
+  - torch
+  - scikit-learn
+  
+  # Text processing and NLP
+  - nltk
+  - spacy
+  - textstat
+  - langdetect
+  - fasttext
+  
+  # Computer Vision and Image Processing
+  - opencv
+  - pillow
+  - pytesseract
+  - pdf2image
+  
+  # PDF and Document Processing
+  - pymupdf  # fitz
+  - docx2txt
+  - python-docx
+  
+  # Web scraping and HTTP
+  - requests
+  - urllib3
+  
+  # Data validation and schemas
+  - jsonschema
+  
+  # Jupyter and development
+  - jupyter
+  - jupyterlab
+  - ipykernel
+  - notebook
+  
+  # File handling and utilities
+  - pathlib
+  - dataclasses
+  - typing-extensions
+  
+  # System and OS utilities
+  - psutil
+  
+  # Additional useful packages
+  - tqdm  # Progress bars
+  - colorama  # Colored terminal output
+  - click  # Command line interfaces
+  
+  # Development and testing
+  - pytest
+  - black  # Code formatting
+  - flake8  # Linting
+  - mypy  # Type checking
+  
+  # Optional: GPU support (uncomment if needed)
+  # - cudatoolkit=11.8
+  # - cudnn
+
+  # Pip packages (for packages not available in conda)
+  - pip
+  - pip:
+    # OpenAI and AI packages
+    - openai>=1.0.0
+    
+    # Text processing
+    - textstat>=0.7.0
+    - langdetect>=1.0.9
+    - fasttext>=0.9.2
+    
+    # Computer Vision
+    - pytesseract>=0.3.10
+    - pdf2image>=3.1.0
+    
+    # PDF processing
+    - PyMuPDF>=1.23.0  # fitz
+    - docx2txt>=0.8
+    
+    # Data validation
+    - jsonschema>=4.0.0
+    
+    # Optional: Advanced NLP
+    - spacy>=3.4.0
+    - transformers>=4.20.0
+    
+    # Development tools
+    - black>=22.0.0
+    - flake8>=4.0.0
+    - mypy>=0.950
+    - pytest>=7.0.0
+    
+    # Utilities
+    - tqdm>=4.64.0
+    - colorama>=0.4.4
+    - click>=8.0.0
