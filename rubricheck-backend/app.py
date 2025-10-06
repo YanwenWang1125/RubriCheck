@@ -24,7 +24,7 @@ try:
     from flask import Flask, request, jsonify
     from flask_cors import CORS
 except ImportError:
-    print("❌ Flask not installed. Installing Flask and Flask-CORS...")
+    print("Flask not installed. Installing Flask and Flask-CORS...")
     os.system("pip install flask flask-cors")
     from flask import Flask, request, jsonify
     from flask_cors import CORS

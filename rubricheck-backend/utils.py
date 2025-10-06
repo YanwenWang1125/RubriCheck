@@ -59,7 +59,7 @@ def get_openai_client(api_key: Optional[str] = None) -> OpenAI:
             os.environ["OPENAI_API_KEY"] = api_key
             _client = OpenAI(api_key=api_key)
         except Exception as e:
-            print(f"⚠️  Warning: Could not load API key: {e}")
+            print(f"Warning: Could not load API key: {e}")
             # Fallback to environment variable
             _client = OpenAI()
     

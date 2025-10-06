@@ -36,10 +36,10 @@ try:
     # Import from grading_engine.py
     from grading_engine import grade_essay, GradeSummary, generate_essay_insights, run_grading_example
     
-    print("✅ All modules imported successfully!")
+    print("All modules imported successfully!")
     
 except ImportError as e:
-    print(f"❌ Import error: {e}")
+    print(f"Import error: {e}")
     print("Make sure all three Python modules are in the same directory")
     print("Available files:")
     for f in os.listdir('.'):
@@ -53,32 +53,18 @@ class RubriCheckPipeline:
     Complete pipeline that integrates all three RubriCheck modules.
     """
     
-    def __init__(self, api_key_file: str = r"C:\Users\Leo\AI projects\_api.txt"):
+    def __init__(self, api_key: str = None):
         """Initialize the pipeline with API key configuration."""
-        self.api_key_file = api_key_file
-        self._setup_api_key()
-        
-    def _setup_api_key(self):
-        """Set up API key from file."""
-        try:
-            with open(self.api_key_file, 'r', encoding='utf-8') as f:
-                for line in f:
-                    if line.strip().startswith('rubriCheck:'):
-                        api_key = line.strip().split(':', 1)[1].strip()
-                        os.environ["OPENAI_API_KEY"] = api_key
-                        print("✅ API key loaded successfully")
-                        return
-            raise ValueError("rubriCheck API key not found in file")
-        except FileNotFoundError:
-            print(f"❌ API file not found at {self.api_key_file}")
-            sys.exit(1)
-        except Exception as e:
-            print(f"❌ Error loading API key: {e}")
-            sys.exit(1)
+        self.api_key = api_key or os.getenv('OPENAI_API_KEY')
+        if not self.api_key:
+            print("Warning: No OpenAI API key provided. Set OPENAI_API_KEY environment variable.")
+        else:
+            os.environ["OPENAI_API_KEY"] = self.api_key
+            print("API key configured successfully")
     
     def process_essay(self, essay_path: str, options: Optional[PreprocessOptions] = None) -> ProcessedEssay:
         """Step 1: Process essay using essay_preprocessor module."""
-        print(f"📝 Processing essay: {essay_path}")
+        print(f"Processing essay: {essay_path}")
         
         if not os.path.exists(essay_path):
             raise FileNotFoundError(f"Essay file not found: {essay_path}")
@@ -90,12 +76,12 @@ class RubriCheckPipeline:
         options = options or PreprocessOptions()
         processed_essay = preprocessor.run(essay_text, options)
         
-        print(f"✅ Essay processed: {len(processed_essay.paragraphs)} paragraphs, {processed_essay.metadata.word_count} words")
+        print(f"Essay processed: {len(processed_essay.paragraphs)} paragraphs, {processed_essay.metadata.word_count} words")
         return processed_essay
     
     def parse_rubric(self, rubric_path: str) -> Dict[str, Any]:
         """Step 2: Parse rubric using rubric_parser_prompt module."""
-        print(f"📋 Parsing rubric: {rubric_path}")
+        print(f"Parsing rubric: {rubric_path}")
         
         if not os.path.exists(rubric_path):
             raise FileNotFoundError(f"Rubric file not found: {rubric_path}")
@@ -105,19 +91,19 @@ class RubriCheckPipeline:
         if not rubric:
             raise ValueError("Failed to parse rubric")
             
-        print(f"✅ Rubric parsed: {len(rubric.get('criteria', []))} criteria")
+        print(f"Rubric parsed: {len(rubric.get('criteria', []))} criteria")
         return rubric
     
     def grade_essay(self, rubric: Dict[str, Any], processed_essay: ProcessedEssay, 
                   max_span_chars: int = 240) -> GradeSummary:
         """Step 3: Grade essay using grading_engine module."""
-        print("🤖 Grading essay with AI...")
+        print("Grading essay with AI...")
         
         # Pass the full ProcessedEssay object to utilize rich metadata
         converted_rubric = self._convert_rubric_format(rubric)
         summary = grade_essay(converted_rubric, processed_essay, max_span_chars)
         
-        print(f"✅ Grading complete: {summary.numeric_score} ({summary.letter})")
+        print(f"Grading complete: {summary.numeric_score} ({summary.letter})")
         return summary
     
     def _convert_rubric_format(self, rubric: Dict[str, Any]) -> Dict[str, Any]:
@@ -153,7 +139,7 @@ class RubriCheckPipeline:
                             output_path: Optional[str] = None,
                             essay_options: Optional[PreprocessOptions] = None) -> Dict[str, Any]:
         """Run the complete pipeline: essay preprocessing → rubric parsing → AI grading."""
-        print("🚀 Starting RubriCheck Complete Pipeline")
+        print("Starting RubriCheck Complete Pipeline")
         print("=" * 50)
         
         try:
@@ -199,13 +185,13 @@ class RubriCheckPipeline:
             if output_path:
                 with open(output_path, 'w', encoding='utf-8') as f:
                     json.dump(results, f, indent=2, ensure_ascii=False)
-                print(f"💾 Results saved to: {output_path}")
+                print(f"Results saved to: {output_path}")
             
-            print("\n🎉 Pipeline completed successfully!")
+            print("\nPipeline completed successfully!")
             return results
             
         except Exception as e:
-            print(f"❌ Pipeline failed: {e}")
+            print(f"Pipeline failed: {e}")
             raise
 
 
