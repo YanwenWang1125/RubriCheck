@@ -1,5 +1,6 @@
 name: rubriCheck
 channels:
+  - pytorch
   - conda-forge
   - defaults
 dependencies:
@@ -14,7 +15,7 @@ dependencies:
   # Machine Learning and AI
   - openai>=1.0.0
   - transformers
-  - torch
+  - pytorch
   - scikit-learn
   
   # Text processing and NLP
@@ -22,7 +23,6 @@ dependencies:
   - spacy
   - textstat
   - langdetect
-  - fasttext
   
   # Computer Vision and Image Processing
   - opencv
@@ -31,7 +31,6 @@ dependencies:
   - pdf2image
   
   # PDF and Document Processing
-  - pymupdf  # fitz
   - docx2txt
   - python-docx
   
