@@ -13,6 +13,21 @@ npm run dev
 
 Open http://localhost:5173
 
+## Example Files for Testing
+
+The following example files are provided for testing:
+
+- **`rubric.example.json`** - Comprehensive argumentative essay rubric with 5 criteria
+- **`rubric.simple.json`** - Simple 3-criteria rubric for quick testing  
+- **`sample-essay.txt`** - Sample argumentative essay about renewable energy
+
+### Quick Test:
+1. Copy the content from `rubric.simple.json`
+2. Paste it into the "Upload Rubric" section
+3. Copy the content from `sample-essay.txt` 
+4. Paste it into the "Essay Text" section
+5. Click "Evaluate Essay" to see the AI grading in action!
+
 ## Configure API
 
 Set `VITE_API_BASE_URL` in `.env` (e.g., `https://api.your-domain.com`).  

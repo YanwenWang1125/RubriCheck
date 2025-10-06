@@ -1,0 +1,88 @@
+{
+  "id": "simple-essay-v1",
+  "title": "Simple Essay Rubric",
+  "criteria": [
+    {
+      "id": "clarity",
+      "name": "Clarity of Ideas",
+      "weight": 0.4,
+      "levels": [
+        {
+          "name": "Excellent",
+          "description": "Ideas are clearly and logically presented with strong organization.",
+          "points": 4
+        },
+        {
+          "name": "Good",
+          "description": "Ideas are mostly clear with minor organizational issues.",
+          "points": 3
+        },
+        {
+          "name": "Fair",
+          "description": "Some ideas are unclear or poorly organized.",
+          "points": 2
+        },
+        {
+          "name": "Poor",
+          "description": "Ideas are confusing and hard to follow.",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "grammar",
+      "name": "Grammar and Mechanics",
+      "weight": 0.3,
+      "levels": [
+        {
+          "name": "Excellent",
+          "description": "No grammar or spelling errors.",
+          "points": 4
+        },
+        {
+          "name": "Good",
+          "description": "Minor grammar or spelling errors.",
+          "points": 3
+        },
+        {
+          "name": "Fair",
+          "description": "Several grammar issues.",
+          "points": 2
+        },
+        {
+          "name": "Poor",
+          "description": "Frequent grammar and spelling mistakes.",
+          "points": 1
+        }
+      ]
+    },
+    {
+      "id": "evidence",
+      "name": "Use of Evidence",
+      "weight": 0.3,
+      "levels": [
+        {
+          "name": "Excellent",
+          "description": "Strong evidence that clearly supports the argument.",
+          "points": 4
+        },
+        {
+          "name": "Good",
+          "description": "Good evidence with some support for the argument.",
+          "points": 3
+        },
+        {
+          "name": "Fair",
+          "description": "Some evidence but weak support for the argument.",
+          "points": 2
+        },
+        {
+          "name": "Poor",
+          "description": "Little to no evidence or irrelevant evidence.",
+          "points": 1
+        }
+      ]
+    }
+  ],
+  "scaleNote": "Simple 3-criteria rubric for quick testing. Total possible points: 12."
+}

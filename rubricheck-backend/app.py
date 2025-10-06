@@ -55,10 +55,10 @@ class RubriCheckAPI:
         """Initialize the API with OpenAI API key."""
         self.api_key = api_key or os.getenv('OPENAI_API_KEY')
         if not self.api_key:
-            logger.warning("⚠️ No OpenAI API key provided. Set OPENAI_API_KEY environment variable.")
+            logger.warning("No OpenAI API key provided. Set OPENAI_API_KEY environment variable.")
         else:
             os.environ["OPENAI_API_KEY"] = self.api_key
-            logger.info("✅ OpenAI API key configured")
+            logger.info("OpenAI API key configured")
         
         # Initialize preprocessor
         self.preprocessor = EssayPreprocessor()
@@ -181,11 +181,11 @@ class RubriCheckAPI:
             frontend_result["meta"]["essay_insights"] = essay_insights
             frontend_result["meta"]["essay_metadata"] = asdict(processed_essay.metadata)
             
-            logger.info("✅ Essay evaluation completed successfully")
+            logger.info("Essay evaluation completed successfully")
             return frontend_result
             
         except Exception as e:
-            logger.error(f"❌ Error during essay evaluation: {e}")
+            logger.error(f"Error during essay evaluation: {e}")
             raise
 
 # Initialize API
@@ -305,7 +305,7 @@ if __name__ == '__main__':
     port = int(os.getenv('FLASK_PORT', 8000))
     debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     
-    logger.info(f"🚀 Starting RubriCheck API server on {host}:{port}")
+    logger.info(f"Starting RubriCheck API server on {host}:{port}")
     logger.info(f"Debug mode: {debug}")
     
     app.run(host=host, port=port, debug=debug)
