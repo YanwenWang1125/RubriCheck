@@ -30,7 +30,7 @@ except ImportError:
 OPENAI_MODEL = os.environ.get("RUBRICHECK_MODEL", "gpt-4o-mini")
 
 # Import shared utilities
-from utils import get_api_key_from_file, get_openai_client
+from utils import get_api_key_from_env, get_openai_client
 
 # ===============================
 # Data structures (expected inputs)

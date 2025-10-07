@@ -135,11 +135,20 @@ class RubriCheckAPI:
         
         # Convert per-criterion results
         for criterion_result in grade_summary.per_criterion:
+            # Convert evidence spans format
+            evidence_spans = []
+            if criterion_result.evidence_spans:
+                for span in criterion_result.evidence_spans:
+                    evidence_spans.append({
+                        "text": span.get("quote", ""),
+                        "paraIndex": span.get("paragraph_index")
+                    })
+            
             frontend_item = {
                 "criterionId": criterion_result.criterion_id,
                 "level": criterion_result.level,
                 "justification": criterion_result.justification or "",
-                "evidenceSpans": criterion_result.evidence_spans or [],
+                "evidenceSpans": evidence_spans,
                 "suggestion": criterion_result.actionable_suggestion or "",
                 "confidence": 0.8  # Default confidence
             }

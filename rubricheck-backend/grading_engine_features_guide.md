@@ -383,7 +383,7 @@ The grading engine expects rubrics in this format:
    os.environ["OPENAI_API_KEY"] = "your-api-key"
    
    # Option 2: Use utils.py (recommended)
-   from utils import get_api_key_from_file
+   from utils import get_api_key_from_env
    ```
 
 3. **Run Example**:

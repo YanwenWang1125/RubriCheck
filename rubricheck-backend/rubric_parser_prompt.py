@@ -509,7 +509,7 @@ def demo_parse_rubric(file_path: str, model: str = "gpt-4o-mini") -> Dict[str, A
 
 
 # Import shared utilities
-from utils import get_api_key_from_file, get_openai_client
+from utils import get_api_key_from_env, get_openai_client
 
 def run_parser_example():
     """Main function to parse a rubric file."""
@@ -521,7 +521,7 @@ def run_parser_example():
     try:
         # Get API key from file if not provided
         if api_key is None:
-            api_key = get_api_key_from_file()
+            api_key = get_api_key_from_env()
         
         # Initialize parser
         rubric_parser = RubricParser(api_key=api_key, model=model)

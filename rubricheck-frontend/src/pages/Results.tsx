@@ -15,7 +15,9 @@ export default function Results() {
           <div className="card p-4">
             <div className="text-sm text-gray-600">Overall</div>
             <div className="text-2xl font-semibold">
-              {typeof result.overall.numeric === 'number' ? `${(result.overall.numeric * 100).toFixed(1)}%` : '--'}
+              {typeof result.overall.numeric === 'number' ? 
+                (result.overall.numeric > 1 ? `${result.overall.numeric.toFixed(1)}%` : `${(result.overall.numeric * 100).toFixed(1)}%`) 
+                : '--'}
             </div>
             <div className="text-sm text-gray-600">
               {result.overall.letter ? `Letter: ${result.overall.letter}` : ''}
@@ -35,7 +37,9 @@ export default function Results() {
                   {it.suggestion && <div className="mt-1 text-gray-700"><span className="font-medium">Suggestion: </span>{it.suggestion}</div>}
                   {!!it.evidenceSpans?.length && (
                     <ul className="mt-2 text-gray-600 list-disc pl-5">
-                      {it.evidenceSpans.map((ev, i) => <li key={i} className="text-xs">“{ev.text}” {typeof ev.paraIndex==='number' ? `(para ${ev.paraIndex})` : ''}</li>)}
+                      {it.evidenceSpans
+                        .filter(ev => ev.text && ev.text.trim().length > 0)
+                        .map((ev, i) => <li key={i} className="text-xs">"{ev.text}" {typeof ev.paraIndex==='number' ? `(para ${ev.paraIndex})` : ''}</li>)}
                     </ul>
                   )}
                 </div>
