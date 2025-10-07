@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useApp } from '../store'
 import { evaluateEssay } from '../lib/api'
+import LoadingProgress from '../components/LoadingProgress'
 
 export default function RunEvaluation() {
   const { rubric, essayText, setResult } = useApp()
@@ -31,6 +32,11 @@ export default function RunEvaluation() {
         </button>
       </div>
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      
+      <LoadingProgress 
+        isVisible={loading} 
+        onComplete={() => setLoading(false)}
+      />
     </section>
   )
 }
