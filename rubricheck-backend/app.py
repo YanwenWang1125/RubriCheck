@@ -21,12 +21,12 @@ if current_dir not in sys.path:
 
 # Import Flask and related modules
 try:
-    from flask import Flask, request, jsonify
+    from flask import Flask, request, jsonify, Response
     from flask_cors import CORS
 except ImportError:
     print("Flask not installed. Installing Flask and Flask-CORS...")
     os.system("pip install flask flask-cors")
-    from flask import Flask, request, jsonify
+    from flask import Flask, request, jsonify, Response
     from flask_cors import CORS
 
 # Import RubriCheck modules

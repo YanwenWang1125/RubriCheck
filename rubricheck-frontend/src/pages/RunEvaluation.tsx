@@ -17,10 +17,11 @@ export default function RunEvaluation() {
     try {
       const data = await evaluateEssay(rubric, essayText, selectedModel)
       setResult(data)
+      // Stop loading immediately when result is received
+      setLoading(false)
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Request failed.')
-    } finally {
-      setLoading(false)
+      setLoading(false) // Stop loading on error
     }
   }
 
@@ -45,8 +46,7 @@ export default function RunEvaluation() {
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
       
       <LoadingProgress 
-        isVisible={loading} 
-        onComplete={() => setLoading(false)}
+        isVisible={loading}
       />
     </section>
   )
