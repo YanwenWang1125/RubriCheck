@@ -27,7 +27,7 @@ except ImportError:
     # Fallback for when rubric parser is not available
     RubricParser = Any
     ParseResult = Any
-OPENAI_MODEL = os.environ.get("RUBRICHECK_MODEL", "gpt-4o-mini")
+OPENAI_MODEL = os.environ.get("RUBRICHECK_MODEL", "gpt-5-mini")
 
 # Import shared utilities
 from utils import get_api_key_from_env, get_openai_client
@@ -173,13 +173,14 @@ def make_agreement_variant_prompt(base_prompt: str, variant_tag: str) -> str:
 # Core LLM helpers
 # ===============================
 
-def llm_json(prompt: str, system: str) -> Dict[str, Any]:
+def llm_json(prompt: str, system: str, model: str = None) -> Dict[str, Any]:
     """
     Calls the OpenAI chat completion and attempts to parse JSON only.
     We ask the model to output ONLY JSON. If it fails, we rethrow with the raw text.
     """
+    model_to_use = model or OPENAI_MODEL
     resp = get_openai_client().chat.completions.create(
-        model=OPENAI_MODEL,
+        model=model_to_use,
         temperature=0.2,
         messages=[
             {"role": "system", "content": system},
@@ -321,14 +322,15 @@ def compute_categorical_aggregate(per: List[CriterionResult], rubric: Dict[str, 
 def evaluate_one_criterion(
     criterion: Dict[str, Any],
     processed_essay: ProcessedEssay,
-    max_span_chars: int = 240
+    max_span_chars: int = 240,
+    model: str = None
 ) -> CriterionResult:
     system = SYSTEM_BASE.format(max_span_chars=max_span_chars)
     base_prompt = make_criterion_user_prompt(criterion, processed_essay, max_span_chars)
 
     # Agreement check: run two slightly perturbed versions
-    out1 = llm_json(make_agreement_variant_prompt(base_prompt, "A"), system)
-    out2 = llm_json(make_agreement_variant_prompt(base_prompt, "B"), system)
+    out1 = llm_json(make_agreement_variant_prompt(base_prompt, "A"), system, model)
+    out2 = llm_json(make_agreement_variant_prompt(base_prompt, "B"), system, model)
 
     # If either refused, mark refuse (you can decide a stricter policy)
     refused = (out1.get("refuse") is True) or (out2.get("refuse") is True)
@@ -343,7 +345,7 @@ def evaluate_one_criterion(
     if not refused and lvl1 and lvl2 and lvl1 != lvl2:
         agreement_flag = "needs_review"
         # optional tie-break third pass:
-        out3 = llm_json(make_agreement_variant_prompt(base_prompt, "TIE_BREAK"), system)
+        out3 = llm_json(make_agreement_variant_prompt(base_prompt, "TIE_BREAK"), system, model)
         lvl3 = out3.get("level")
         if lvl3 and (lvl3 == lvl1 or lvl3 == lvl2):
             final = out3
@@ -358,7 +360,8 @@ def evaluate_one_criterion(
     # Consistency self-check
     consistency = llm_json(
         make_consistency_prompt(final, criterion),
-        system="You are a strict JSON validator."
+        system="You are a strict JSON validator.",
+        model=model
     )
     low_conf = bool(consistency.get("low_confidence"))
     explanation = consistency.get("explanation")
@@ -381,11 +384,12 @@ def evaluate_one_criterion(
 def grade_essay(
     rubric: Dict[str, Any],
     processed_essay: ProcessedEssay,
-    max_span_chars: int = 240
+    max_span_chars: int = 240,
+    model: str = None
 ) -> GradeSummary:
     results: List[CriterionResult] = []
     for crit in rubric["criteria"]:
-        res = evaluate_one_criterion(crit, processed_essay, max_span_chars=max_span_chars)
+        res = evaluate_one_criterion(crit, processed_essay, max_span_chars=max_span_chars, model=model)
         results.append(res)
 
     # Aggregations

@@ -2,9 +2,10 @@ import React, { useState } from 'react'
 import { useApp } from '../store'
 import { evaluateEssay } from '../lib/api'
 import LoadingProgress from '../components/LoadingProgress'
+import ModelSelector from '../components/ModelSelector'
 
 export default function RunEvaluation() {
-  const { rubric, essayText, setResult } = useApp()
+  const { rubric, essayText, setResult, selectedModel, setSelectedModel } = useApp()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -14,7 +15,7 @@ export default function RunEvaluation() {
     setError(null)
     setLoading(true)
     try {
-      const data = await evaluateEssay(rubric, essayText)
+      const data = await evaluateEssay(rubric, essayText, selectedModel)
       setResult(data)
     } catch (e: any) {
       setError(e?.response?.data?.message || e?.message || 'Request failed.')
@@ -25,7 +26,17 @@ export default function RunEvaluation() {
 
   return (
     <section className="card p-6">
-      <h2 className="text-lg font-semibold mb-2">3) Evaluate</h2>
+      <h2 className="text-lg font-semibold mb-4">3) Evaluate</h2>
+      
+      {/* Model Selection */}
+      <div className="mb-6">
+        <ModelSelector 
+          selectedModel={selectedModel}
+          onModelChange={setSelectedModel}
+          disabled={loading}
+        />
+      </div>
+      
       <div className="flex items-center gap-3">
         <button className="btn btn-primary disabled:opacity-60" onClick={run} disabled={loading}>
           {loading ? 'Evaluating…' : 'Run Evaluation'}

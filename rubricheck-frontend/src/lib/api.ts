@@ -6,10 +6,11 @@ const api = axios.create({
   timeout: 120000
 })
 
-export async function evaluateEssay(rubric: Rubric, essayText: string) {
+export async function evaluateEssay(rubric: Rubric, essayText: string, model: string = 'gpt-5-mini') {
   const { data } = await api.post<EvaluationResult>('/evaluate', {
     rubric,
-    essayText
+    essayText,
+    model
   })
   return data
 }

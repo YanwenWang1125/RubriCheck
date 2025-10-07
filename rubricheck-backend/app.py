@@ -156,7 +156,7 @@ class RubriCheckAPI:
         
         return frontend_result
     
-    def evaluate_essay(self, rubric: Dict[str, Any], essay_text: str) -> Dict[str, Any]:
+    def evaluate_essay(self, rubric: Dict[str, Any], essay_text: str, model: str = 'gpt-5-mini') -> Dict[str, Any]:
         """Evaluate an essay against a rubric."""
         try:
             logger.info("Starting essay evaluation...")
@@ -177,8 +177,8 @@ class RubriCheckAPI:
             backend_rubric = self.convert_frontend_rubric_to_backend(rubric)
             
             # Step 3: Grade essay
-            logger.info("Grading essay with AI...")
-            grade_summary = grade_essay(backend_rubric, processed_essay, max_span_chars=240)
+            logger.info(f"Grading essay with AI using model: {model}")
+            grade_summary = grade_essay(backend_rubric, processed_essay, max_span_chars=240, model=model)
             logger.info(f"Grading complete: {grade_summary.numeric_score} ({grade_summary.letter})")
             
             # Step 4: Convert result to frontend format
@@ -220,6 +220,7 @@ def evaluate():
         
         rubric = data.get('rubric')
         essay_text = data.get('essayText')
+        model = data.get('model', 'gpt-5-mini')  # Default to gpt-5-mini
         
         if not rubric:
             return jsonify({"error": "No rubric provided"}), 400
@@ -227,10 +228,10 @@ def evaluate():
         if not essay_text:
             return jsonify({"error": "No essay text provided"}), 400
         
-        logger.info(f"Received evaluation request: rubric '{rubric.get('title', 'Unknown')}', essay length: {len(essay_text)} chars")
+        logger.info(f"Received evaluation request: rubric '{rubric.get('title', 'Unknown')}', essay length: {len(essay_text)} chars, model: {model}")
         
         # Evaluate essay
-        result = api_handler.evaluate_essay(rubric, essay_text)
+        result = api_handler.evaluate_essay(rubric, essay_text, model)
         
         return jsonify(result)
         
