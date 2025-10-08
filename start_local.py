@@ -59,7 +59,7 @@ def run_backend():
         print("WARNING: Flask not installed. Installing requirements...")
         try:
             result = subprocess.run([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"], 
-                                  cwd=backend_dir, capture_output=True, text=True)
+                                  cwd=backend_dir, capture_output=True, text=True, encoding="utf-8")
             if result.returncode == 0:
                 print("SUCCESS: Requirements installed successfully")
             else:
@@ -72,18 +72,21 @@ def run_backend():
     # Start Flask server
     try:
         print("Starting Flask server...")
+        # Set environment to use UTF-8 encoding
+        env = os.environ.copy()
+        env['PYTHONIOENCODING'] = 'utf-8'
+        env['LANG'] = 'en_US.UTF-8'
+        env['LC_ALL'] = 'en_US.UTF-8'
+        
+        # Start backend process without capturing output to avoid encoding issues
         backend_process = subprocess.Popen([sys.executable, "app.py"], 
                                          cwd=backend_dir,
-                                         stdout=subprocess.PIPE, 
-                                         stderr=subprocess.STDOUT,
-                                         universal_newlines=True,
-                                         bufsize=1)
+                                         env=env)
         
-        # Stream output in real-time
-        for line in iter(backend_process.stdout.readline, ''):
-            if line:
-                print(f"[Backend] {line.strip()}")
+        print("Backend server started successfully!")
+        print("Backend API available at http://localhost:8000")
         
+        # Wait for the process to complete
         backend_process.wait()
     except Exception as e:
         print(f"ERROR: Error starting backend: {e}")
@@ -114,7 +117,7 @@ def run_frontend():
                                   cwd=frontend_dir, 
                                   shell=True, 
                                   capture_output=True, 
-                                  text=True)
+                                  text=True, encoding="utf-8")
             if result.returncode == 0:
                 print("SUCCESS: Frontend dependencies installed successfully")
             else:
@@ -132,7 +135,7 @@ def run_frontend():
     if not env_path.exists() and env_example_path.exists():
         print("Creating .env file from example...")
         try:
-            with open(env_example_path, "r") as src, open(env_path, "w") as dst:
+            with open(env_example_path, "r", encoding="utf-8") as src, open(env_path, "w", encoding="utf-8") as dst:
                 dst.write(src.read())
             print("SUCCESS: .env file created")
         except Exception as e:
@@ -141,19 +144,23 @@ def run_frontend():
     # Start Vite development server
     try:
         print("Starting Vite development server...")
+        # Set environment to use UTF-8 encoding
+        env = os.environ.copy()
+        env['PYTHONIOENCODING'] = 'utf-8'
+        env['LANG'] = 'en_US.UTF-8'
+        env['LC_ALL'] = 'en_US.UTF-8'
+        
+        # Start frontend process without capturing output to avoid encoding issues
         frontend_process = subprocess.Popen(["npm", "run", "dev"], 
                                           cwd=frontend_dir,
                                           shell=True,
-                                          stdout=subprocess.PIPE, 
-                                          stderr=subprocess.STDOUT,
-                                          universal_newlines=True,
-                                          bufsize=1)
+                                          env=env)
         
-        # Stream output in real-time
-        for line in iter(frontend_process.stdout.readline, ''):
-            if line:
-                print(f"[Frontend] {line.strip()}")
+        print("Frontend server started successfully!")
+        print("Check your browser at http://localhost:5173 (or the next available port)")
+        print("Press Ctrl+C to stop the servers")
         
+        # Wait for the process to complete
         frontend_process.wait()
     except Exception as e:
         print(f"ERROR: Error starting frontend: {e}")
@@ -172,7 +179,7 @@ def check_requirements():
     
     # Check Node.js
     try:
-        result = subprocess.run(["node", "--version"], capture_output=True, text=True, shell=True)
+        result = subprocess.run(["node", "--version"], capture_output=True, text=True, shell=True, encoding="utf-8")
         if result.returncode == 0:
             print(f"Node.js {result.stdout.strip()}")
         else:
@@ -184,7 +191,7 @@ def check_requirements():
     
     # Check npm
     try:
-        result = subprocess.run(["npm", "--version"], capture_output=True, text=True, shell=True)
+        result = subprocess.run(["npm", "--version"], capture_output=True, text=True, shell=True, encoding="utf-8")
         if result.returncode == 0:
             print(f"npm {result.stdout.strip()}")
         else:
