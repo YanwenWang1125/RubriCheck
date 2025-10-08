@@ -259,7 +259,7 @@ class RubricParser:
                 ],
                 response_format={"type": "json_object"},
                 max_tokens=2048,
-                temperature=0.1
+                temperature=1.0
             )
             
             # Extract the JSON response

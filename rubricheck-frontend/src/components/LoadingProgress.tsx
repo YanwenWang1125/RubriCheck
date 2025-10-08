@@ -26,97 +26,108 @@ const PROGRESS_STEPS: ProgressStep[] = [
     title: 'Converting Rubric',
     description: 'Transforming rubric format for AI evaluation...',
     icon: '🔄',
-    duration: 1000
+    duration: 1500
   },
   {
     id: 'ai_grading',
     title: 'AI Evaluation',
     description: 'AI is analyzing your essay against each criterion...',
     icon: '🤖',
-    duration: 12000
+    duration: 4000
+  },
+  {
+    id: 'evidence_extraction',
+    title: 'Extracting Evidence',
+    description: 'Finding supporting quotes and evidence spans...',
+    icon: '🔍',
+    duration: 2000
   },
   {
     id: 'finalizing',
     title: 'Finalizing Results',
-    description: 'Converting result to frontend format...',
+    description: 'Compiling scores and generating feedback...',
     icon: '✨',
-    duration: 1000
+    duration: 1500
   }
 ]
 
-// Dynamic descriptions for AI grading step - based on backend logs
+// Dynamic descriptions for AI grading step
 const AI_GRADING_DESCRIPTIONS = [
-  'Evaluating criterion 1...',
-  'Evaluating criterion 2...',
-  'Evaluating criterion 3...',
-  'Evaluating criterion 4...',
-  'Evaluating criterion 5...',
-  'Evaluating criterion 6...',
-  'Running consistency checks...',
-  'Finalizing scores...'
+  'Evaluating clarity and organization...',
+  'Analyzing grammar and mechanics...',
+  'Assessing evidence and support...',
+  'Reviewing critical thinking...',
+  'Checking argument structure...',
+  'Finalizing criterion scores...'
 ]
 
-export default function LoadingProgress({ isVisible }: LoadingProgressProps) {
+export default function LoadingProgress({ isVisible, onComplete }: LoadingProgressProps) {
   const [currentStep, setCurrentStep] = useState(0)
   const [progress, setProgress] = useState(0)
+  const [isAnimating, setIsAnimating] = useState(false)
   const [aiGradingDescription, setAiGradingDescription] = useState(0)
 
   useEffect(() => {
     if (!isVisible) {
       setCurrentStep(0)
       setProgress(0)
+      setIsAnimating(false)
       setAiGradingDescription(0)
       return
     }
 
-    const startTime = Date.now()
-    let animationId: number
-    
-    // Update progress based on elapsed time - more realistic progression
-    const updateProgress = () => {
-      const elapsed = Date.now() - startTime
+    setIsAnimating(true)
+    let stepIndex = 0
+    let aiDescriptionIndex = 0
+
+    const runSteps = () => {
+      if (stepIndex >= PROGRESS_STEPS.length) {
+        setProgress(100)
+        setTimeout(() => {
+          setIsAnimating(false)
+          onComplete?.()
+        }, 500)
+        return
+      }
+
+      const step = PROGRESS_STEPS[stepIndex]
+      setCurrentStep(stepIndex)
       
-      // More realistic progress curve that starts fast and slows down
-      let progressPercent = 0
-      if (elapsed < 2000) {
-        // First 2 seconds: 0-20%
-        progressPercent = (elapsed / 2000) * 20
-        setCurrentStep(0) // Processing Essay
-      } else if (elapsed < 3000) {
-        // Next 1 second: 20-30%
-        progressPercent = 20 + ((elapsed - 2000) / 1000) * 10
-        setCurrentStep(1) // Converting Rubric
-      } else if (elapsed < 15000) {
-        // Next 12 seconds: 30-80% (AI grading takes longest)
-        progressPercent = 30 + ((elapsed - 3000) / 12000) * 50
-        setCurrentStep(2) // AI Evaluation
-      } else {
-        // After 15 seconds: 80-95% (waiting for API)
-        progressPercent = Math.min(80 + ((elapsed - 15000) / 10000) * 15, 95)
-        setCurrentStep(3) // Finalizing
+      // Special handling for AI grading step
+      if (step.id === 'ai_grading') {
+        const descriptionInterval = setInterval(() => {
+          setAiGradingDescription(prev => (prev + 1) % AI_GRADING_DESCRIPTIONS.length)
+        }, step.duration / AI_GRADING_DESCRIPTIONS.length)
+        
+        setTimeout(() => {
+          clearInterval(descriptionInterval)
+        }, step.duration)
       }
       
-      setProgress(progressPercent)
+      // Animate progress for this step
+      const stepProgress = (stepIndex + 1) / PROGRESS_STEPS.length * 100
+      const startProgress = (stepIndex / PROGRESS_STEPS.length) * 100
       
-      // Continue animation
-      animationId = requestAnimationFrame(updateProgress)
+      // Smooth progress animation
+      const progressInterval = setInterval(() => {
+        setProgress(prev => {
+          const increment = (stepProgress - startProgress) / (step.duration / 50)
+          const newProgress = Math.min(prev + increment, stepProgress)
+          if (newProgress >= stepProgress) {
+            clearInterval(progressInterval)
+          }
+          return newProgress
+        })
+      }, 50)
+
+      setTimeout(() => {
+        stepIndex++
+        runSteps()
+      }, step.duration)
     }
-    
-    // Start progress updates
-    animationId = requestAnimationFrame(updateProgress)
-    
-    // Handle AI grading descriptions
-    const descriptionInterval = setInterval(() => {
-      setAiGradingDescription(prev => (prev + 1) % AI_GRADING_DESCRIPTIONS.length)
-    }, 2000) // Change description every 2 seconds
-    
-    return () => {
-      clearInterval(descriptionInterval)
-      if (animationId) {
-        cancelAnimationFrame(animationId)
-      }
-    }
-  }, [isVisible])
+
+    runSteps()
+  }, [isVisible, onComplete])
 
   if (!isVisible) return null
 
@@ -124,10 +135,10 @@ export default function LoadingProgress({ isVisible }: LoadingProgressProps) {
     <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200">
       {/* Header */}
       <div className="text-center mb-4">
-        <div className="text-3xl mb-2">
+        <div className="text-3xl mb-2 animate-float">
           {PROGRESS_STEPS[currentStep]?.icon || '🚀'}
         </div>
-        <h3 className="text-lg font-semibold text-gray-800">
+        <h3 className="text-lg font-semibold text-gray-800 animate-pulse-glow">
           {PROGRESS_STEPS[currentStep]?.title || 'Processing...'}
         </h3>
       </div>
@@ -140,9 +151,12 @@ export default function LoadingProgress({ isVisible }: LoadingProgressProps) {
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
           <div 
-            className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-300 ease-out"
+            className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full transition-all duration-300 ease-out relative"
             style={{ width: `${progress}%` }}
-          />
+          >
+            {/* Enhanced shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-40 animate-shimmer"></div>
+          </div>
         </div>
       </div>
 
@@ -163,24 +177,24 @@ export default function LoadingProgress({ isVisible }: LoadingProgressProps) {
             key={step.id}
             className={`w-2 h-2 rounded-full transition-all duration-300 ${
               index < currentStep
-                ? 'bg-green-500'
+                ? 'bg-green-500 scale-110'
                 : index === currentStep
-                ? 'bg-blue-500'
+                ? 'bg-blue-500 scale-125 animate-pulse'
                 : 'bg-gray-300'
             }`}
           />
         ))}
       </div>
 
-      {/* Simple Loading Dots */}
+      {/* Animated Dots */}
       <div className="flex justify-center space-x-1">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
             className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce"
             style={{
-              animationDelay: `${i * 0.2}s`,
-              animationDuration: '1.4s'
+              animationDelay: `${i * 0.1}s`,
+              animationDuration: '1s'
             }}
           />
         ))}

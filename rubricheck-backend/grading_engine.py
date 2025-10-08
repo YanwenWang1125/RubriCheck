@@ -181,7 +181,7 @@ def llm_json(prompt: str, system: str, model: str = None) -> Dict[str, Any]:
     model_to_use = model or OPENAI_MODEL
     resp = get_openai_client().chat.completions.create(
         model=model_to_use,
-        temperature=0.2,
+        temperature=1.0,
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": prompt}
