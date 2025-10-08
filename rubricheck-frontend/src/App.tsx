@@ -16,7 +16,7 @@ export default function App() {
         <RunEvaluation />
         <Results />
         <footer className="text-xs text-gray-500 py-8">
-          <div className="mx-auto max-w-6xl">RubriCheck · Frontend (React + Vite + Tailwind). Configure <code>.env</code> → <code>VITE_API_BASE_URL</code>.</div>
+          <div className="mx-auto max-w-6xl">RubriCheck · Frontend (React + Vite + Tailwind). </div>
         </footer>
       </main>
     </div>

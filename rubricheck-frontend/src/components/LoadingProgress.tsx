@@ -33,21 +33,21 @@ const PROGRESS_STEPS: ProgressStep[] = [
     title: 'AI Evaluation',
     description: 'AI is analyzing your essay against each criterion...',
     icon: '🤖',
-    duration: 4000
+    duration: 80000
   },
   {
     id: 'evidence_extraction',
     title: 'Extracting Evidence',
     description: 'Finding supporting quotes and evidence spans...',
     icon: '🔍',
-    duration: 2000
+    duration: 20000
   },
   {
     id: 'finalizing',
     title: 'Finalizing Results',
     description: 'Compiling scores and generating feedback...',
     icon: '✨',
-    duration: 1500
+    duration: 15000
   }
 ]
 
