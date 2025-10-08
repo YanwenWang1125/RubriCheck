@@ -26,6 +26,7 @@ def get_api_key_from_env() -> str:
     """
     api_key = os.getenv('OPENAI_API_KEY')
     if not api_key:
+        print(f"OPENAI_API_KEY environment variable not found: {api_key}")
         raise ValueError("OPENAI_API_KEY environment variable not found")
     return api_key
 
@@ -50,8 +51,8 @@ def get_openai_client(api_key: Optional[str] = None) -> OpenAI:
             _client = OpenAI(api_key=api_key)
         except Exception as e:
             print(f"Warning: Could not load API key: {e}")
-            # Fallback to environment variable
-            _client = OpenAI()
+            # Don't create client without API key - raise the error instead
+            raise ValueError(f"OpenAI API key is required but not found: {e}")
     
     return _client
 

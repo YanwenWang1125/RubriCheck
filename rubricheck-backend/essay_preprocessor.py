@@ -633,15 +633,13 @@ def _print_summary(proc: ProcessedEssay) -> None:
 
 
 if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="RubriCheck Essay Preprocessor")
-    parser.add_argument("--file", type=str, help="Path to essay text file", default=None)
-    parser.add_argument("--no-redact", action="store_true", help="Disable PII redaction")
-    parser.add_argument("--no-translate", action="store_true", help="Disable translation of non-English")
-    parser.add_argument("--json", action="store_true", help="Print JSON output")
-    args = parser.parse_args()
-
+    # Manual configuration - modify these parameters as needed
+    essay_file_path = None  # Set to file path if you want to load from file, otherwise None
+    enable_pii_redaction = True  # Set to False to disable PII redaction
+    enable_translation = True  # Set to False to disable translation
+    output_json = False  # Set to True to output JSON instead of summary
+    
+    # Sample essay text for demonstration
     DEMO_TEXT = """
 
 Moss, Howard (1922-1987)   Howard Moss was an important practitioner of formal verse in the mid-twentieth century. He also had an uncanny ability to envision—and thereby in his poems to transform—nature into the environment created by humanity, bringing it into the realm of civilization; he strove to formalize nature, in keeping with his view of what poetry should be. He once remarked, "What my poems are really about […] is the experience of hovering between the forms of nature and the forms of art" (Leiter 29). Moss set an example for his generation among poets who believed in explicit order, and for later poets who have identified themselves with NEW FORMALISM. He was also the poetry editor at The New Yorker magazine from 1950 until shortly before his death, a position that allowed him to orchestrate much of mainstream American writing.
@@ -655,21 +653,55 @@ In "Elegy for My Sister" (1980) he painstakingly details his sister's fatal dise
 Moss's finely crafted verse is matched by his willingness to account for the peripatetic and otherwise insignificant details of living, making them at times monumental. In his work the truth peeks out through artifice.
 """
 
-    if args.file:
-        print(args.file)
-        with open(args.file, "r", encoding="utf-8") as f:
-            text = f.read()
+    # Load text from file or use demo text
+    if essay_file_path:
+        print(f"Loading essay from file: {essay_file_path}")
+        try:
+            with open(essay_file_path, "r", encoding="utf-8") as f:
+                text = f.read()
+        except FileNotFoundError:
+            print(f"Error: File '{essay_file_path}' not found. Using demo text instead.")
+            text = DEMO_TEXT
+        except Exception as e:
+            print(f"Error reading file: {e}. Using demo text instead.")
+            text = DEMO_TEXT
     else:
+        print("Using demo text for processing...")
         text = DEMO_TEXT
-        print(text)
 
-    pre = EssayPreprocessor(translator=NoOpTranslator())
-    proc = pre.run(text, PreprocessOptions(
-        redact_pii=not args.no_redact,
-        translate_non_english=not args.no_translate,
-    ))
+    # Initialize preprocessor with NoOp translator (no actual translation)
+    preprocessor = EssayPreprocessor(translator=NoOpTranslator())
+    
+    # Configure processing options
+    options = PreprocessOptions(
+        target_language="en",
+        translate_non_english=enable_translation,
+        redact_pii=enable_pii_redaction,
+        chunk_max_paragraphs=6,
+        chunk_overlap_paragraphs=1
+    )
+    
+    print(f"Processing options:")
+    print(f"  - PII Redaction: {'Enabled' if enable_pii_redaction else 'Disabled'}")
+    print(f"  - Translation: {'Enabled' if enable_translation else 'Disabled'}")
+    print(f"  - Target Language: {options.target_language}")
+    print(f"  - Chunk Max Paragraphs: {options.chunk_max_paragraphs}")
+    print(f"  - Chunk Overlap: {options.chunk_overlap_paragraphs}")
+    print()
 
-    if args.json:
-        print(proc.to_json())
-    else:
-        _print_summary(proc)
+    # Process the essay
+    try:
+        processed_essay = preprocessor.run(text, options)
+        
+        # Output results
+        if output_json:
+            print("=== JSON OUTPUT ===")
+            print(processed_essay.to_json())
+        else:
+            print("=== PROCESSING SUMMARY ===")
+            _print_summary(processed_essay)
+            
+    except Exception as e:
+        print(f"Error during processing: {e}")
+        import traceback
+        traceback.print_exc()

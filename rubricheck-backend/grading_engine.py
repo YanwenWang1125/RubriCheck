@@ -7,6 +7,14 @@ import re
 from typing import Dict, List, Any, Optional, Tuple, Literal
 from dataclasses import dataclass, field
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenv not installed, skip loading .env file
+    pass
+
 # --------- OpenAI client ----------
 # pip install openai>=1.0.0
 from openai import OpenAI
@@ -27,7 +35,7 @@ except ImportError:
     # Fallback for when rubric parser is not available
     RubricParser = Any
     ParseResult = Any
-OPENAI_MODEL = os.environ.get("RUBRICHECK_MODEL", "gpt-5-mini")
+OPENAI_MODEL = os.environ.get("RUBRICHECK_MODEL", "gpt-5")
 
 # Import shared utilities
 from utils import get_api_key_from_env, get_openai_client

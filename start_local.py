@@ -13,6 +13,7 @@ import signal
 import threading
 import atexit
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Global variables to track processes
 backend_process = None
@@ -216,6 +217,11 @@ def main():
     # Save original working directory
     original_cwd = os.getcwd()
     
+    # Load environment variables from .env file
+    load_dotenv()
+    print(f"Environment variables loaded from .env file: {os.getenv('OPENAI_API_KEY')}")
+
+    
     # Register cleanup function
     atexit.register(cleanup_processes)
     
@@ -252,6 +258,8 @@ def main():
     print("Frontend will run on: http://localhost:5173")
     print("\nPress Ctrl+C to stop both servers")
     print("-" * 50)
+
+
     
     # Start backend in a separate thread
     backend_thread = threading.Thread(target=run_backend, daemon=True)
@@ -268,6 +276,8 @@ def main():
         print("ERROR: Backend server failed to start")
         return 1
     
+
+
     # Start frontend in main thread
     try:
         print("Starting frontend server...")
@@ -281,6 +291,10 @@ def main():
         cleanup_processes()
         return 1
 
+
+
 if __name__ == "__main__":
     exit_code = main()
+    
+   
     sys.exit(exit_code)

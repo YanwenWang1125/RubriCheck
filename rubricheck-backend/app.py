@@ -34,6 +34,7 @@ except ImportError:
 # Load environment variables from .env file
 load_dotenv()
 
+
 # Import RubriCheck modules
 try:
     from essay_preprocessor import EssayPreprocessor, PreprocessOptions, ProcessedEssay

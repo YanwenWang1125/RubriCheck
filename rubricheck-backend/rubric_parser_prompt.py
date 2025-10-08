@@ -551,4 +551,4 @@ def run_example():
     return run_parser_example()
 
 # if __name__ == "__main__":
-#    main()
+#    run_example()
