@@ -20,6 +20,14 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import asdict
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenv not installed, skip loading .env file
+    pass
+
 # Add current directory to path for imports
 current_dir = os.getcwd()
 if current_dir not in sys.path:

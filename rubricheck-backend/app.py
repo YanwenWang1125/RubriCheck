@@ -23,11 +23,16 @@ if current_dir not in sys.path:
 try:
     from flask import Flask, request, jsonify, Response
     from flask_cors import CORS
+    from dotenv import load_dotenv
 except ImportError:
     print("Flask not installed. Installing Flask and Flask-CORS...")
-    os.system("pip install flask flask-cors")
+    os.system("pip install flask flask-cors python-dotenv")
     from flask import Flask, request, jsonify, Response
     from flask_cors import CORS
+    from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Import RubriCheck modules
 try:
