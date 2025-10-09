@@ -314,6 +314,104 @@ def parse_rubric():
             "message": str(e)
         }), 500
 
+@app.route('/essay/parse', methods=['POST'])
+def parse_essay():
+    """Parse essay from uploaded file and extract text."""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        # Check file extension
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in ['.txt', '.docx', '.pdf', '.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff', '.bmp']:
+            return jsonify({"error": f"Unsupported file type: {file_ext}. Supported: .txt, .docx, .pdf, .png, .jpg, .jpeg, .webp, .tif, .tiff, .bmp"}), 400
+        
+        # Save uploaded file temporarily with proper extension
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
+            file.save(temp_file.name)
+            temp_path = temp_file.name
+        
+        try:
+            # Extract text from file
+            essay_text = extract_essay_text(temp_path)
+            if not essay_text:
+                return jsonify({"error": "Failed to extract text from file. Please check the file format and content."}), 400
+            
+            return jsonify({
+                "success": True,
+                "text": essay_text,
+                "filename": file.filename,
+                "file_type": file_ext
+            })
+            
+        finally:
+            # Clean up temp file
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+        
+    except Exception as e:
+        logger.error(f"Error in /essay/parse endpoint: {e}")
+        return jsonify({
+            "error": "Internal server error",
+            "message": str(e)
+        }), 500
+
+def extract_essay_text(file_path: str) -> str:
+    """Extract text from various file formats."""
+    try:
+        ext = os.path.splitext(file_path)[1].lower()
+        
+        if ext == '.txt':
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                return f.read()
+        
+        elif ext == '.docx':
+            import docx2txt
+            return docx2txt.process(file_path)
+        
+        elif ext == '.pdf':
+            # Try to use PyPDF2 or pdfplumber if available
+            try:
+                import PyPDF2
+                with open(file_path, 'rb') as f:
+                    reader = PyPDF2.PdfReader(f)
+                    text = ""
+                    for page in reader.pages:
+                        text += page.extract_text() + "\n"
+                    return text.strip()
+            except ImportError:
+                try:
+                    import pdfplumber
+                    with pdfplumber.open(file_path) as pdf:
+                        text = ""
+                        for page in pdf.pages:
+                            text += page.extract_text() + "\n"
+                        return text.strip()
+                except ImportError:
+                    return "PDF processing not available. Please install PyPDF2 or pdfplumber."
+        
+        elif ext in {'.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff', '.bmp'}:
+            # Try OCR with pytesseract if available
+            try:
+                import pytesseract
+                from PIL import Image
+                image = Image.open(file_path)
+                return pytesseract.image_to_string(image)
+            except ImportError:
+                return "Image OCR processing not available. Please install pytesseract and Pillow."
+        
+        else:
+            return "Unsupported file format."
+            
+    except Exception as e:
+        logger.error(f"Error extracting text from {file_path}: {e}")
+        return f"Error extracting text: {str(e)}"
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({"error": "Endpoint not found"}), 404

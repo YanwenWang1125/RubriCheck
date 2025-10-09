@@ -26,3 +26,15 @@ export async function parseRubricFile(file: File): Promise<Rubric> {
   })
   return data
 }
+
+export async function parseEssayFile(file: File): Promise<{ text: string; filename: string; file_type: string }> {
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  const { data } = await api.post<{ success: boolean; text: string; filename: string; file_type: string }>('/essay/parse', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+  return data
+}
