@@ -245,29 +245,38 @@ class RubriCheckAPI:
             grading_results = pipeline_results.get("grading_results", {})
             per_criterion = grading_results.get("per_criterion", [])
             
-            # Convert per-criterion results
+            # Convert per-criterion results to match frontend expectations
             frontend_items = []
             for criterion in per_criterion:
+                # Convert evidence_spans format
+                evidence_spans = []
+                for span in criterion.get("evidence_spans", []):
+                    evidence_spans.append({
+                        "text": span.get("quote", ""),
+                        "paraIndex": span.get("paragraph_index"),
+                        "start": span.get("start"),
+                        "end": span.get("end")
+                    })
+                
                 frontend_item = {
-                    "criterion_id": criterion.get("criterion_id", ""),
-                    "criterion_name": criterion.get("criterion_id", "").replace("_", " ").title(),
+                    "criterionId": criterion.get("criterion_id", ""),
                     "level": criterion.get("level", ""),
                     "justification": criterion.get("justification", ""),
-                    "evidence_spans": criterion.get("evidence_spans", []),
-                    "actionable_suggestion": criterion.get("actionable_suggestion", ""),
-                    "refuse": criterion.get("refuse", False),
-                    "reason": criterion.get("reason", ""),
-                    "low_confidence": criterion.get("low_confidence", False),
-                    "agreement_flag": criterion.get("agreement_flag", "ok")
+                    "evidenceSpans": evidence_spans,
+                    "suggestion": criterion.get("actionable_suggestion", ""),
+                    "confidence": 1.0 if not criterion.get("low_confidence", False) else 0.5
                 }
                 frontend_items.append(frontend_item)
             
-            # Create frontend result structure
+            # Create frontend result structure matching the expected format
             frontend_result = {
+                "overall": {
+                    "numeric": grading_results.get("numeric_score"),
+                    "letter": grading_results.get("letter_grade"),
+                    "confidence": 0.9  # Default confidence
+                },
                 "items": frontend_items,
                 "meta": {
-                    "numeric_score": grading_results.get("numeric_score"),
-                    "letter_grade": grading_results.get("letter_grade"),
                     "categorical_points": grading_results.get("categorical_points"),
                     "reliability_flags": grading_results.get("reliability_flags", {}),
                     "essay_insights": pipeline_results.get("essay_insights", {}),
@@ -297,28 +306,32 @@ def health_check():
 
 @app.route('/evaluate', methods=['POST'])
 def evaluate():
-    """Main evaluation endpoint using file paths."""
+    """Main evaluation endpoint - supports both file paths and direct data."""
     try:
         # Get request data
         data = request.get_json()
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400
         
-        rubric_path = data.get('rubricPath')
-        essay_path = data.get('essayPath')
         model = data.get('model', 'gpt-5-mini')  # Default to gpt-5-mini
         fast_mode = data.get('fastMode', True)  # Default to fast mode
         
-        if not rubric_path:
-            return jsonify({"error": "No rubric file path provided"}), 400
+        # Check if using file paths (development) or direct data (production)
+        rubric_path = data.get('rubricPath')
+        essay_path = data.get('essayPath')
+        rubric_data = data.get('rubric')
+        essay_text = data.get('essayText')
         
-        if not essay_path:
-            return jsonify({"error": "No essay file path provided"}), 400
-        
-        logger.info(f"Received evaluation request: rubric_path='{rubric_path}', essay_path='{essay_path}', model: {model}, fast_mode: {fast_mode}")
-        
-        # Evaluate using rubriCheck_pipeline.py
-        result = api_handler.evaluate_with_files(rubric_path, essay_path, model, fast_mode)
+        if rubric_path and essay_path:
+            # File path approach (development/local)
+            logger.info(f"Using file path approach: rubric_path='{rubric_path}', essay_path='{essay_path}'")
+            result = api_handler.evaluate_with_files(rubric_path, essay_path, model, fast_mode)
+        elif rubric_data and essay_text:
+            # Direct data approach (production)
+            logger.info(f"Using direct data approach: rubric title='{rubric_data.get('title', 'Unknown')}', essay length={len(essay_text)}")
+            result = api_handler.evaluate_essay(rubric_data, essay_text, model, fast_mode)
+        else:
+            return jsonify({"error": "Either provide rubricPath+essayPath OR rubric+essayText"}), 400
         
         return jsonify(result)
         

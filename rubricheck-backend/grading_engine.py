@@ -410,6 +410,133 @@ def evaluate_one_criterion(
         tie_break_used=tie_break_used
     )
 
+
+def evaluate_all_criteria_single_call(
+    rubric: Dict[str, Any],
+    processed_essay: ProcessedEssay,
+    max_span_chars: int = 240,
+    model: str = None
+) -> List[CriterionResult]:
+    """
+    Evaluate all criteria in a single API call for maximum efficiency.
+    
+    Args:
+        rubric: The rubric to use for grading
+        processed_essay: The processed essay data
+        max_span_chars: Maximum characters for evidence spans
+        model: OpenAI model to use
+        
+    Returns:
+        List of CriterionResult objects
+    """
+    system = SYSTEM_BASE.format(max_span_chars=max_span_chars)
+    
+    # Create combined prompt for all criteria
+    combined_prompt = make_combined_criteria_prompt(rubric, processed_essay, max_span_chars)
+    
+    # Single API call
+    result = llm_json(combined_prompt, system, model)
+    
+    # Parse the combined result
+    return parse_combined_criteria_result(result, rubric)
+
+
+def make_combined_criteria_prompt(
+    rubric: Dict[str, Any],
+    processed_essay: ProcessedEssay,
+    max_span_chars: int = 240
+) -> str:
+    """Create a single prompt that evaluates all criteria at once."""
+    # Extract paragraphs with rich metadata
+    essay_paragraphs = [p.text for p in processed_essay.paragraphs if p.text.strip()]
+    essay_block = "\n".join([f"[{i}] {p}" for i, p in enumerate(essay_paragraphs)])
+    
+    # Include essay metadata for better context
+    metadata = processed_essay.metadata
+    essay_context = f"""
+ESSAY METADATA
+- Word count: {metadata.word_count}
+- Language: {metadata.language_detected}
+- Readability: {metadata.readability.flesch_reading_ease:.1f} (Flesch Reading Ease)
+- Quote ratio: {metadata.quote_char_ratio:.1%}
+- Sections: {len(metadata.sections)}
+"""
+
+    # Build criteria section
+    criteria_section = ""
+    for i, criterion in enumerate(rubric["criteria"]):
+        valid_levels_list = criterion["valid_levels"]
+        descriptors = criterion["descriptors"]
+        
+        criteria_section += f"""
+CRITERION {i+1}
+- criterion_id: {criterion.get('id')}
+- name: {criterion.get('name')}
+- valid_levels (choose EXACTLY one): {valid_levels_list}
+- level scale note: {criterion.get('level_scale_note', '')}
+
+DESCRIPTORS (for this criterion only)
+{descriptors}
+
+"""
+    
+    return f"""
+You will grade ALL criteria for this essay in a single response.
+
+{criteria_section}
+
+{essay_context}
+
+ESSAY (paragraph-indexed)
+{essay_block}
+
+REQUIREMENTS
+1) Return STRICT JSON with an array called "criteria_results"
+2) Each item in the array should have EXACTLY these keys:
+   - "criterion_id" (string)
+   - "valid_levels" (array of strings)
+   - "level" (string, must be one of valid_levels)
+   - "justification" (string, 1-3 sentences)
+   - "evidence_spans" (array of objects with "paragraph_index" and "quote")
+   - "actionable_suggestion" (string, one concrete improvement)
+3) "evidence_spans": each quote must be <= {max_span_chars} chars and appear verbatim in the essay
+4) Consider essay metadata (word count, readability, language) in your evaluation
+5) Never invent content; only quote from the essay paragraphs provided
+
+Return ONLY the JSON object with the "criteria_results" array—no commentary.
+"""
+
+
+def parse_combined_criteria_result(
+    result: Dict[str, Any],
+    rubric: Dict[str, Any]
+) -> List[CriterionResult]:
+    """Parse the combined criteria result into individual CriterionResult objects."""
+    criteria_results = result.get("criteria_results", [])
+    
+    parsed_results = []
+    for i, criterion_data in enumerate(criteria_results):
+        # Get the original criterion for reference
+        original_criterion = rubric["criteria"][i] if i < len(rubric["criteria"]) else {}
+        
+        parsed_result = CriterionResult(
+            criterion_id=criterion_data.get("criterion_id", original_criterion.get("id", f"criterion_{i}")),
+            valid_levels=criterion_data.get("valid_levels", original_criterion.get("valid_levels", [])),
+            level=criterion_data.get("level"),
+            justification=criterion_data.get("justification"),
+            evidence_spans=criterion_data.get("evidence_spans", []),
+            actionable_suggestion=criterion_data.get("actionable_suggestion"),
+            refuse=bool(criterion_data.get("refuse", False)),
+            reason=criterion_data.get("reason"),
+            low_confidence=False,  # Single call doesn't have consistency checking
+            consistency_explanation=None,
+            agreement_flag="ok",
+            tie_break_used=False
+        )
+        parsed_results.append(parsed_result)
+    
+    return parsed_results
+
 def grade_essay(
     rubric: Dict[str, Any],
     processed_essay: ProcessedEssay,
@@ -425,12 +552,17 @@ def grade_essay(
         processed_essay: The processed essay data
         max_span_chars: Maximum characters for evidence spans
         model: OpenAI model to use
-        fast_mode: If True, use single API call per criterion (3-5x faster)
+        fast_mode: If True, use single API call for all criteria (much faster)
     """
-    results: List[CriterionResult] = []
-    for crit in rubric["criteria"]:
-        res = evaluate_one_criterion(crit, processed_essay, max_span_chars=max_span_chars, model=model, fast_mode=fast_mode)
-        results.append(res)
+    if fast_mode:
+        # Single API call for all criteria (much faster and cheaper)
+        results = evaluate_all_criteria_single_call(rubric, processed_essay, max_span_chars, model)
+    else:
+        # Multiple API calls (original approach for maximum accuracy)
+        results: List[CriterionResult] = []
+        for crit in rubric["criteria"]:
+            res = evaluate_one_criterion(crit, processed_essay, max_span_chars=max_span_chars, model=model, fast_mode=False)
+            results.append(res)
 
     # Aggregations
     numeric_score, letter = compute_weighted_numeric(results, rubric)

@@ -1,21 +1,19 @@
 import React, { useState } from 'react'
 import { useApp } from '../store'
-import { evaluateEssay, evaluateEssayWithFiles } from '../lib/api'
+import { evaluateEssayWithFiles } from '../lib/api'
 import LoadingProgress from '../components/LoadingProgress'
 import ModelSelector from '../components/ModelSelector'
 
 export default function RunEvaluation() {
-  const { rubric, essayText, setResult, selectedModel, setSelectedModel, rubricFilePath, essayFilePath } = useApp()
+  const { setResult, selectedModel, setSelectedModel, rubricFilePath, essayFilePath } = useApp()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fastMode, setFastMode] = useState(true)
 
   const run = async () => {
-    if (!rubric) { setError('Please upload a rubric first.'); return }
-    if (!essayText.trim()) { setError('Please paste an essay.'); return }
-    
-    // Check if we have file paths for the new approach
+    // Check if we have file paths (development) or need to use direct data (production)
     if (rubricFilePath && essayFilePath) {
+      // File path approach (development/local)
       setError(null)
       setLoading(true)
       try {
@@ -27,17 +25,9 @@ export default function RunEvaluation() {
         setLoading(false)
       }
     } else {
-      // Fallback to old approach if file paths not available
-      setError(null)
-      setLoading(true)
-      try {
-        const data = await evaluateEssay(rubric, essayText, selectedModel, fastMode)
-        setResult(data)
-        setLoading(false)
-      } catch (e: any) {
-        setError(e?.response?.data?.message || e?.message || 'Request failed.')
-        setLoading(false)
-      }
+      // Fallback to direct data approach (production)
+      setError('File path approach not available. Please use direct data approach for production deployment.')
+      setLoading(false)
     }
   }
 
@@ -67,14 +57,14 @@ export default function RunEvaluation() {
           <span className="text-sm">
             <strong>Fast Mode</strong> 
             <span className="text-gray-600 ml-1">
-              ({fastMode ? '~1-2 minutes' : '~4-6 minutes'})
+              ({fastMode ? '~30-60 seconds' : '~4-6 minutes'})
             </span>
           </span>
         </label>
         <p className="text-xs text-gray-500 mt-1">
           {fastMode 
-            ? 'Single API call per criterion for faster evaluation' 
-            : 'Multiple API calls per criterion for higher accuracy and consistency checking'
+            ? 'Single API call for all criteria - much faster and cheaper' 
+            : 'Multiple API calls per criterion for maximum accuracy and consistency checking'
           }
         </p>
       </div>

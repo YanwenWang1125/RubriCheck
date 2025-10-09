@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import { useApp } from '../store'
 import type { Rubric } from '../types'
-import { parseRubricFile, uploadRubricFile } from '../lib/api'
+import { uploadRubricFile } from '../lib/api'
 
 export default function UploadRubric() {
-  const { rubric, setRubric, rubricFilePath, setRubricFilePath } = useApp()
+  const { rubricFilePath, setRubricFilePath } = useApp()
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -16,35 +17,17 @@ export default function UploadRubric() {
     setUploadError(null)
 
     try {
-      // Check if it's a JSON file
-      if (file.type === 'application/json' || file.name.endsWith('.json')) {
-        const text = await file.text()
-        const parsed = JSON.parse(text) as Rubric
-        setRubric(parsed)
-        
-        // Also upload the file to get file path
-        const uploadResult = await uploadRubricFile(file)
-        setRubricFilePath(uploadResult.file_path)
-      } else {
-        // For DOCX/TXT files, upload first to get file path
-        const uploadResult = await uploadRubricFile(file)
-        setRubricFilePath(uploadResult.file_path)
-        
-        // Then parse to show in UI
-        const parsedRubric = await parseRubricFile(file)
-        setRubric(parsedRubric)
-      }
+      // Just upload the file and get the file path
+      const uploadResult = await uploadRubricFile(file)
+      setRubricFilePath(uploadResult.file_path)
+      setUploadedFileName(uploadResult.filename)
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to process file'
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upload file'
       setUploadError(errorMessage)
-      console.error('File processing error:', err)
+      console.error('File upload error:', err)
     } finally {
       setIsUploading(false)
     }
-  }
-
-  const onPaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-    // no-op, user pastes JSON manually
   }
 
   return (
@@ -59,33 +42,31 @@ export default function UploadRubric() {
             onChange={onFile}
             disabled={isUploading}
           />
-          {isUploading ? 'Processing...' : 'Choose file'}
+          {isUploading ? 'Uploading...' : 'Choose file'}
         </label>
       </div>
       <p className="text-sm text-gray-600 mb-3">
-        Upload a rubric file (JSON, DOCX, or TXT) or paste JSON directly. 
+        Upload a rubric file. The file will be processed by the backend.
         Supported formats: <code>.json</code>, <code>.docx</code>, <code>.txt</code>
       </p>
-      <textarea
-        className="input min-h-[140px] font-mono"
-        placeholder='Paste rubric JSON here...'
-        defaultValue={rubric ? JSON.stringify(rubric, null, 2) : ''}
-        onChange={(e) => {
-          try {
-            const parsed = JSON.parse(e.target.value) as Rubric
-            setRubric(parsed)
-          } catch { /* ignore while typing */ }
-        }}
-        onPaste={onPaste}
-      />
+      
       {uploadError && (
         <div className="mt-3 text-sm text-red-700 bg-red-50 p-2 rounded">
           ❌ Error: {uploadError}
         </div>
       )}
-      {rubric && (
-        <div className="mt-3 text-sm text-green-700">
-          ✅ Loaded rubric: <span className="font-medium">{rubric.title}</span> ({rubric.criteria.length} criteria)
+      
+      {uploadedFileName && (
+        <div className="mt-3 text-sm text-green-700 bg-green-50 p-3 rounded">
+          ✅ File uploaded successfully: <span className="font-medium">{uploadedFileName}</span>
+          <br />
+          <span className="text-xs text-gray-600">File path: {rubricFilePath}</span>
+        </div>
+      )}
+      
+      {!uploadedFileName && !isUploading && (
+        <div className="mt-3 text-sm text-gray-500 bg-gray-50 p-3 rounded">
+          📁 No file selected. Please choose a rubric file to upload.
         </div>
       )}
     </section>

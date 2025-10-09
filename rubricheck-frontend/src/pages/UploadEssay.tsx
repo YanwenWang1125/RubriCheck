@@ -1,12 +1,12 @@
 import React, { useState } from 'react'
 import { useApp } from '../store'
-import { parseEssayFile, uploadEssayFile } from '../lib/api'
+import { uploadEssayFile } from '../lib/api'
 
 export default function UploadEssay() {
-  const { essayText, setEssayText, essayFilePath, setEssayFilePath } = useApp()
-  const [chars, setChars] = useState(essayText.length)
+  const { essayFilePath, setEssayFilePath } = useApp()
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -16,14 +16,10 @@ export default function UploadEssay() {
     setUploadError(null)
 
     try {
-      // Upload file to get file path
+      // Just upload the file and get the file path
       const uploadResult = await uploadEssayFile(file)
       setEssayFilePath(uploadResult.file_path)
-      
-      // Also parse to show text in UI
-      const result = await parseEssayFile(file)
-      setEssayText(result.text)
-      setChars(result.text.length)
+      setUploadedFileName(uploadResult.filename)
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to process file'
       setUploadError(errorMessage)
@@ -45,25 +41,33 @@ export default function UploadEssay() {
             onChange={onFile}
             disabled={isUploading}
           />
-          {isUploading ? 'Processing...' : 'Choose file'}
+          {isUploading ? 'Uploading...' : 'Choose file'}
         </label>
       </div>
       <p className="text-sm text-gray-600 mb-3">
-        Upload an essay file or paste text directly. 
+        Upload an essay file. The file will be processed by the backend.
         Supported formats: <code>.txt</code>, <code>.docx</code>, <code>.pdf</code>, <code>.png</code>, <code>.jpg</code>, <code>.jpeg</code>, <code>.webp</code>, <code>.tif</code>, <code>.tiff</code>, <code>.bmp</code>
       </p>
-      <textarea
-        className="input min-h-[240px]"
-        placeholder="Paste or type the student's essay here..."
-        value={essayText}
-        onChange={(e) => { setEssayText(e.target.value); setChars(e.target.value.length) }}
-      />
+      
       {uploadError && (
         <div className="mt-2 text-sm text-red-700 bg-red-50 p-2 rounded">
           ❌ Error: {uploadError}
         </div>
       )}
-      <div className="mt-2 text-xs text-gray-500">{chars} characters</div>
+      
+      {uploadedFileName && (
+        <div className="mt-3 text-sm text-green-700 bg-green-50 p-3 rounded">
+          ✅ File uploaded successfully: <span className="font-medium">{uploadedFileName}</span>
+          <br />
+          <span className="text-xs text-gray-600">File path: {essayFilePath}</span>
+        </div>
+      )}
+      
+      {!uploadedFileName && !isUploading && (
+        <div className="mt-3 text-sm text-gray-500 bg-gray-50 p-3 rounded">
+          📁 No file selected. Please choose an essay file to upload.
+        </div>
+      )}
     </section>
   )
 }
