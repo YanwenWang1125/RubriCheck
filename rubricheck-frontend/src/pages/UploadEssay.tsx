@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { useApp } from '../store'
-import { parseEssayFile } from '../lib/api'
+import { parseEssayFile, uploadEssayFile } from '../lib/api'
 
 export default function UploadEssay() {
-  const { essayText, setEssayText } = useApp()
+  const { essayText, setEssayText, essayFilePath, setEssayFilePath } = useApp()
   const [chars, setChars] = useState(essayText.length)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -16,6 +16,11 @@ export default function UploadEssay() {
     setUploadError(null)
 
     try {
+      // Upload file to get file path
+      const uploadResult = await uploadEssayFile(file)
+      setEssayFilePath(uploadResult.file_path)
+      
+      // Also parse to show text in UI
       const result = await parseEssayFile(file)
       setEssayText(result.text)
       setChars(result.text.length)

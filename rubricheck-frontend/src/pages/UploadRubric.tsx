@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 import { useApp } from '../store'
 import type { Rubric } from '../types'
-import { parseRubricFile } from '../lib/api'
+import { parseRubricFile, uploadRubricFile } from '../lib/api'
 
 export default function UploadRubric() {
-  const { rubric, setRubric } = useApp()
+  const { rubric, setRubric, rubricFilePath, setRubricFilePath } = useApp()
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
 
@@ -21,8 +21,16 @@ export default function UploadRubric() {
         const text = await file.text()
         const parsed = JSON.parse(text) as Rubric
         setRubric(parsed)
+        
+        // Also upload the file to get file path
+        const uploadResult = await uploadRubricFile(file)
+        setRubricFilePath(uploadResult.file_path)
       } else {
-        // For DOCX/TXT files, send to backend for parsing
+        // For DOCX/TXT files, upload first to get file path
+        const uploadResult = await uploadRubricFile(file)
+        setRubricFilePath(uploadResult.file_path)
+        
+        // Then parse to show in UI
         const parsedRubric = await parseRubricFile(file)
         setRubric(parsedRubric)
       }

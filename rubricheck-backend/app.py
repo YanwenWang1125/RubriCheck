@@ -40,6 +40,7 @@ try:
     from essay_preprocessor import EssayPreprocessor, PreprocessOptions, ProcessedEssay
     from rubric_parser_prompt import parse_rubric_file, demo_parse_rubric
     from grading_engine import grade_essay, GradeSummary, generate_essay_insights
+    from rubriCheck_pipeline import RubriCheckPipeline
     print("All RubriCheck modules imported successfully!")
 except ImportError as e:
     print(f"Import error: {e}")
@@ -162,7 +163,7 @@ class RubriCheckAPI:
         
         return frontend_result
     
-    def evaluate_essay(self, rubric: Dict[str, Any], essay_text: str, model: str = 'gpt-5-mini') -> Dict[str, Any]:
+    def evaluate_essay(self, rubric: Dict[str, Any], essay_text: str, model: str = 'gpt-5-mini', fast_mode: bool = True) -> Dict[str, Any]:
         """Evaluate an essay against a rubric."""
         try:
             logger.info("Starting essay evaluation...")
@@ -182,9 +183,10 @@ class RubriCheckAPI:
             logger.info("Converting rubric format...")
             backend_rubric = self.convert_frontend_rubric_to_backend(rubric)
             
-            # Step 3: Grade essay
-            logger.info(f"Grading essay with AI using model: {model}")
-            grade_summary = grade_essay(backend_rubric, processed_essay, max_span_chars=240, model=model)
+            # Step 3: Grade essay (using fast mode for better performance)
+            mode_text = "fast mode" if fast_mode else "full mode"
+            logger.info(f"Grading essay with AI using model: {model} ({mode_text})")
+            grade_summary = grade_essay(backend_rubric, processed_essay, max_span_chars=240, model=model, fast_mode=fast_mode)
             logger.info(f"Grading complete: {grade_summary.numeric_score} ({grade_summary.letter})")
             
             # Step 4: Convert result to frontend format
@@ -202,6 +204,84 @@ class RubriCheckAPI:
         except Exception as e:
             logger.error(f"Error during essay evaluation: {e}")
             raise
+    
+    def evaluate_with_files(self, rubric_path: str, essay_path: str, model: str = 'gpt-5-mini', fast_mode: bool = True) -> Dict[str, Any]:
+        """Evaluate essay using file paths and rubriCheck_pipeline.py."""
+        try:
+            logger.info("Starting file-based essay evaluation...")
+            
+            # Initialize pipeline
+            pipeline = RubriCheckPipeline()
+            
+            # Create essay preprocessing options
+            essay_options = PreprocessOptions(
+                target_language="en",
+                translate_non_english=True,
+                redact_pii=True,
+                chunk_max_paragraphs=6,
+                chunk_overlap_paragraphs=1
+            )
+            
+            # Run complete pipeline
+            results = pipeline.run_complete_pipeline(
+                rubric_path=rubric_path,
+                essay_path=essay_path,
+                essay_options=essay_options
+            )
+            
+            # Convert to frontend format
+            frontend_result = self.convert_pipeline_results_to_frontend(results)
+            
+            logger.info("File-based essay evaluation completed successfully")
+            return frontend_result
+            
+        except Exception as e:
+            logger.error(f"Error during file-based essay evaluation: {e}")
+            raise
+    
+    def convert_pipeline_results_to_frontend(self, pipeline_results: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert rubriCheck_pipeline results to frontend format."""
+        try:
+            grading_results = pipeline_results.get("grading_results", {})
+            per_criterion = grading_results.get("per_criterion", [])
+            
+            # Convert per-criterion results
+            frontend_items = []
+            for criterion in per_criterion:
+                frontend_item = {
+                    "criterion_id": criterion.get("criterion_id", ""),
+                    "criterion_name": criterion.get("criterion_id", "").replace("_", " ").title(),
+                    "level": criterion.get("level", ""),
+                    "justification": criterion.get("justification", ""),
+                    "evidence_spans": criterion.get("evidence_spans", []),
+                    "actionable_suggestion": criterion.get("actionable_suggestion", ""),
+                    "refuse": criterion.get("refuse", False),
+                    "reason": criterion.get("reason", ""),
+                    "low_confidence": criterion.get("low_confidence", False),
+                    "agreement_flag": criterion.get("agreement_flag", "ok")
+                }
+                frontend_items.append(frontend_item)
+            
+            # Create frontend result structure
+            frontend_result = {
+                "items": frontend_items,
+                "meta": {
+                    "numeric_score": grading_results.get("numeric_score"),
+                    "letter_grade": grading_results.get("letter_grade"),
+                    "categorical_points": grading_results.get("categorical_points"),
+                    "reliability_flags": grading_results.get("reliability_flags", {}),
+                    "essay_insights": pipeline_results.get("essay_insights", {}),
+                    "essay_metadata": pipeline_results.get("essay_metadata", {}),
+                    "rubric_info": pipeline_results.get("rubric_info", {}),
+                    "pipeline_info": pipeline_results.get("pipeline_info", {})
+                }
+            }
+            
+            return frontend_result
+            
+        except Exception as e:
+            logger.error(f"Error converting pipeline results to frontend format: {e}")
+            raise
 
 # Initialize API
 api_handler = RubriCheckAPI()
@@ -217,27 +297,28 @@ def health_check():
 
 @app.route('/evaluate', methods=['POST'])
 def evaluate():
-    """Main evaluation endpoint."""
+    """Main evaluation endpoint using file paths."""
     try:
         # Get request data
         data = request.get_json()
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400
         
-        rubric = data.get('rubric')
-        essay_text = data.get('essayText')
+        rubric_path = data.get('rubricPath')
+        essay_path = data.get('essayPath')
         model = data.get('model', 'gpt-5-mini')  # Default to gpt-5-mini
+        fast_mode = data.get('fastMode', True)  # Default to fast mode
         
-        if not rubric:
-            return jsonify({"error": "No rubric provided"}), 400
+        if not rubric_path:
+            return jsonify({"error": "No rubric file path provided"}), 400
         
-        if not essay_text:
-            return jsonify({"error": "No essay text provided"}), 400
+        if not essay_path:
+            return jsonify({"error": "No essay file path provided"}), 400
         
-        logger.info(f"Received evaluation request: rubric '{rubric.get('title', 'Unknown')}', essay length: {len(essay_text)} chars, model: {model}")
+        logger.info(f"Received evaluation request: rubric_path='{rubric_path}', essay_path='{essay_path}', model: {model}, fast_mode: {fast_mode}")
         
-        # Evaluate essay
-        result = api_handler.evaluate_essay(rubric, essay_text, model)
+        # Evaluate using rubriCheck_pipeline.py
+        result = api_handler.evaluate_with_files(rubric_path, essay_path, model, fast_mode)
         
         return jsonify(result)
         
@@ -247,6 +328,82 @@ def evaluate():
             "error": "Internal server error",
             "message": str(e)
         }), 500
+
+@app.route('/rubric/upload', methods=['POST'])
+def upload_rubric():
+    """Upload rubric file and return file path."""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        # Validate file type
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in ['.json', '.docx', '.txt']:
+            return jsonify({"error": f"Unsupported file type: {file_ext}. Supported: .json, .docx, .txt"}), 400
+        
+        # Save file to uploads directory
+        upload_dir = os.path.join(os.getcwd(), 'uploads')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Generate unique filename
+        import uuid
+        unique_filename = f"{uuid.uuid4()}{file_ext}"
+        file_path = os.path.join(upload_dir, unique_filename)
+        
+        file.save(file_path)
+        
+        return jsonify({
+            "success": True,
+            "file_path": file_path,
+            "filename": file.filename,
+            "file_type": file_ext
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in /rubric/upload endpoint: {e}")
+        return jsonify({"error": "Internal server error", "message": str(e)}), 500
+
+@app.route('/essay/upload', methods=['POST'])
+def upload_essay():
+    """Upload essay file and return file path."""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+        
+        # Validate file type
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in ['.txt', '.docx', '.pdf', '.png', '.jpg', '.jpeg', '.webp', '.tif', '.tiff', '.bmp']:
+            return jsonify({"error": f"Unsupported file type: {file_ext}. Supported: .txt, .docx, .pdf, .png, .jpg, .jpeg, .webp, .tif, .tiff, .bmp"}), 400
+        
+        # Save file to uploads directory
+        upload_dir = os.path.join(os.getcwd(), 'uploads')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Generate unique filename
+        import uuid
+        unique_filename = f"{uuid.uuid4()}{file_ext}"
+        file_path = os.path.join(upload_dir, unique_filename)
+        
+        file.save(file_path)
+        
+        return jsonify({
+            "success": True,
+            "file_path": file_path,
+            "filename": file.filename,
+            "file_type": file_ext
+        })
+        
+    except Exception as e:
+        logger.error(f"Error in /essay/upload endpoint: {e}")
+        return jsonify({"error": "Internal server error", "message": str(e)}), 500
 
 @app.route('/rubric/parse', methods=['POST'])
 def parse_rubric():

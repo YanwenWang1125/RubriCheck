@@ -331,48 +331,69 @@ def evaluate_one_criterion(
     criterion: Dict[str, Any],
     processed_essay: ProcessedEssay,
     max_span_chars: int = 240,
-    model: str = None
+    model: str = None,
+    fast_mode: bool = True
 ) -> CriterionResult:
+    """
+    Evaluate one criterion with optional fast mode for better performance.
+    
+    Args:
+        criterion: The criterion to evaluate
+        processed_essay: The processed essay data
+        max_span_chars: Maximum characters for evidence spans
+        model: OpenAI model to use
+        fast_mode: If True, use single API call instead of agreement checking (faster)
+    """
     system = SYSTEM_BASE.format(max_span_chars=max_span_chars)
     base_prompt = make_criterion_user_prompt(criterion, processed_essay, max_span_chars)
 
-    # Agreement check: run two slightly perturbed versions
-    out1 = llm_json(make_agreement_variant_prompt(base_prompt, "A"), system, model)
-    out2 = llm_json(make_agreement_variant_prompt(base_prompt, "B"), system, model)
+    if fast_mode:
+        # Fast mode: Single API call (3-5x faster)
+        final = llm_json(base_prompt, system, model)
+        refused = final.get("refuse") is True
+        agreement_flag = "ok"
+        tie_break_used = False
+        low_conf = False
+        explanation = None
+    else:
+        # Full mode: Agreement checking (original behavior)
+        # Agreement check: run two slightly perturbed versions
+        out1 = llm_json(make_agreement_variant_prompt(base_prompt, "A"), system, model)
+        out2 = llm_json(make_agreement_variant_prompt(base_prompt, "B"), system, model)
 
-    # If either refused, mark refuse (you can decide a stricter policy)
-    refused = (out1.get("refuse") is True) or (out2.get("refuse") is True)
+        # If either refused, mark refuse (you can decide a stricter policy)
+        refused = (out1.get("refuse") is True) or (out2.get("refuse") is True)
 
-    # Choose final level:
-    lvl1 = out1.get("level")
-    lvl2 = out2.get("level")
-    final = out1
-    agreement_flag = "ok"
-    tie_break_used = False
+        # Choose final level:
+        lvl1 = out1.get("level")
+        lvl2 = out2.get("level")
+        final = out1
+        agreement_flag = "ok"
+        tie_break_used = False
 
-    if not refused and lvl1 and lvl2 and lvl1 != lvl2:
-        agreement_flag = "needs_review"
-        # optional tie-break third pass:
-        out3 = llm_json(make_agreement_variant_prompt(base_prompt, "TIE_BREAK"), system, model)
-        lvl3 = out3.get("level")
-        if lvl3 and (lvl3 == lvl1 or lvl3 == lvl2):
-            final = out3
-            agreement_flag = "ok"
-            tie_break_used = True
-        else:
-            # If still no agreement, choose by scale order as a pragmatic default,
-            # and keep the "needs_review" flag.
-            final_level = tie_break_choice(lvl1, lvl2, criterion["valid_levels"])
-            final = {**out1, "level": final_level}
+        if not refused and lvl1 and lvl2 and lvl1 != lvl2:
+            agreement_flag = "needs_review"
+            # optional tie-break third pass:
+            out3 = llm_json(make_agreement_variant_prompt(base_prompt, "TIE_BREAK"), system, model)
+            lvl3 = out3.get("level")
+            if lvl3 and (lvl3 == lvl1 or lvl3 == lvl2):
+                final = out3
+                agreement_flag = "ok"
+                tie_break_used = True
+            else:
+                # If still no agreement, choose by scale order as a pragmatic default,
+                # and keep the "needs_review" flag.
+                final_level = tie_break_choice(lvl1, lvl2, criterion["valid_levels"])
+                final = {**out1, "level": final_level}
 
-    # Consistency self-check
-    consistency = llm_json(
-        make_consistency_prompt(final, criterion),
-        system="You are a strict JSON validator.",
-        model=model
-    )
-    low_conf = bool(consistency.get("low_confidence"))
-    explanation = consistency.get("explanation")
+        # Consistency self-check
+        consistency = llm_json(
+            make_consistency_prompt(final, criterion),
+            system="You are a strict JSON validator.",
+            model=model
+        )
+        low_conf = bool(consistency.get("low_confidence"))
+        explanation = consistency.get("explanation")
 
     return CriterionResult(
         criterion_id=final.get("criterion_id", criterion.get("id")),
@@ -393,11 +414,22 @@ def grade_essay(
     rubric: Dict[str, Any],
     processed_essay: ProcessedEssay,
     max_span_chars: int = 240,
-    model: str = None
+    model: str = None,
+    fast_mode: bool = True
 ) -> GradeSummary:
+    """
+    Grade an essay against a rubric with optional fast mode for better performance.
+    
+    Args:
+        rubric: The rubric to use for grading
+        processed_essay: The processed essay data
+        max_span_chars: Maximum characters for evidence spans
+        model: OpenAI model to use
+        fast_mode: If True, use single API call per criterion (3-5x faster)
+    """
     results: List[CriterionResult] = []
     for crit in rubric["criteria"]:
-        res = evaluate_one_criterion(crit, processed_essay, max_span_chars=max_span_chars, model=model)
+        res = evaluate_one_criterion(crit, processed_essay, max_span_chars=max_span_chars, model=model, fast_mode=fast_mode)
         results.append(res)
 
     # Aggregations
