@@ -363,18 +363,173 @@ class RubriCheckPipeline:
 #         sys.exit(1)
 
 
-# if __name__ == "__main__":
-#     # Check if running examples or command line
-#     if len(sys.argv) == 1:
-#         # No arguments provided, run examples
-#         print("🚀 RubriCheck Pipeline Examples")
-#         print("=" * 40)
-#         print("Running basic usage example...")
-#         example_basic_usage()
+def example_basic_usage():
+    """Basic example of using the pipeline."""
+    print("🔬 Example: Basic Pipeline Usage")
+    print("=" * 40)
+    
+    # Initialize pipeline
+    pipeline = RubriCheckPipeline()
+    
+    # Example file paths (adjust these to your actual files)
+    rubric_path = "test_file/test_rubric.docx"
+    essay_path = "test_essay.txt"  # You'll need to create this
+    
+    # Create a sample essay if it doesn't exist
+    if not os.path.exists(essay_path):
+        sample_essay = """
+        This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets.
         
-#         print("\n" + "=" * 40)
-#         print("Running step-by-step example...")
-#         example_step_by_step()
-#     else:
-#         # Command line arguments provided, run main
-#         main()
+        Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain.
+        
+        Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment.
+        """
+        with open(essay_path, 'w', encoding='utf-8') as f:
+            f.write(sample_essay)
+        print(f"📝 Created sample essay: {essay_path}")
+    
+    try:
+        # Run complete pipeline
+        results = pipeline.run_complete_pipeline(
+            rubric_path=rubric_path,
+            essay_path=essay_path,
+            output_path="example_results.json"
+        )
+        
+        # Print results
+        print("\n📊 Results:")
+        grading = results["grading_results"]
+        print(f"Score: {grading['numeric_score']} ({grading['letter_grade']})")
+        
+        return results
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+        return None
+
+
+def example_step_by_step():
+    """Example showing step-by-step pipeline execution."""
+    print("🔍 Example: Step-by-Step Execution")
+    print("=" * 35)
+    
+    pipeline = RubriCheckPipeline()
+    
+    try:
+        # Step 1: Process essay
+        print("Step 1: Processing essay...")
+        processed_essay = pipeline.process_essay("test_essay.txt")
+        print(f"   - {len(processed_essay.paragraphs)} paragraphs")
+        print(f"   - {processed_essay.metadata.word_count} words")
+        print(f"   - Language: {processed_essay.metadata.language_detected}")
+        
+        # Step 2: Parse rubric
+        print("\nStep 2: Parsing rubric...")
+        rubric = pipeline.parse_rubric("test_file/test_rubric.docx")
+        print(f"   - {len(rubric.get('criteria', []))} criteria")
+        print(f"   - Scale type: {rubric.get('scale', {}).get('type')}")
+        
+        # Step 3: Grade essay
+        print("\nStep 3: Grading essay...")
+        grade_summary = pipeline.grade_essay(rubric, processed_essay)
+        print(f"   - Score: {grade_summary.numeric_score}")
+        print(f"   - Letter: {grade_summary.letter}")
+        print(f"   - Criteria evaluated: {len(grade_summary.per_criterion)}")
+        
+        # Show detailed results
+        print("\n📋 Detailed Results:")
+        for i, criterion in enumerate(grade_summary.per_criterion, 1):
+            print(f"   {i}. {criterion.criterion_id}: {criterion.level}")
+            if criterion.justification:
+                print(f"      Justification: {criterion.justification[:80]}...")
+        
+    except Exception as e:
+        print(f"❌ Error: {e}")
+
+
+if __name__ == "__main__":
+    # Manual configuration - modify these parameters as needed
+    run_basic_example = True      # Set to True to run basic usage example
+    run_step_by_step = True       # Set to True to run step-by-step example
+    run_custom_pipeline = False   # Set to True to run custom pipeline
+    
+    # Custom pipeline parameters (used if run_custom_pipeline = True)
+    custom_rubric_path = "test_file/test_rubric.docx"  # Path to your rubric file
+    custom_essay_path = "test_essay.txt"               # Path to your essay file
+    custom_output_path = "custom_results.json"         # Output file for results
+    custom_api_key = None                              # Set to your API key or None to use env var
+    
+    # Essay preprocessing options
+    essay_options = PreprocessOptions(
+        target_language="en",           # Target language for translation
+        translate_non_english=True,     # Enable/disable translation
+        redact_pii=True,               # Enable/disable PII redaction
+        chunk_max_paragraphs=6,        # Max paragraphs per chunk
+        chunk_overlap_paragraphs=1     # Overlap between chunks
+    )
+    
+    print("🚀 RubriCheck Pipeline Examples")
+    print("=" * 50)
+    print(f"Configuration:")
+    print(f"  - Basic Example: {'Enabled' if run_basic_example else 'Disabled'}")
+    print(f"  - Step-by-Step Example: {'Enabled' if run_step_by_step else 'Disabled'}")
+    print(f"  - Custom Pipeline: {'Enabled' if run_custom_pipeline else 'Disabled'}")
+    print()
+    
+    # Run Basic Usage Example
+    if run_basic_example:
+        print("Running basic usage example...")
+        print("-" * 30)
+        example_basic_usage()
+        print()
+    
+    # Run Step-by-Step Example
+    if run_step_by_step:
+        print("Running step-by-step example...")
+        print("-" * 30)
+        example_step_by_step()
+        print()
+    
+    # Run Custom Pipeline
+    if run_custom_pipeline:
+        print("Running custom pipeline...")
+        print("-" * 30)
+        
+        try:
+            # Initialize pipeline with custom API key
+            pipeline = RubriCheckPipeline(api_key=custom_api_key)
+            
+            # Run complete pipeline with custom parameters
+            results = pipeline.run_complete_pipeline(
+                rubric_path=custom_rubric_path,
+                essay_path=custom_essay_path,
+                output_path=custom_output_path,
+                essay_options=essay_options
+            )
+            
+            # Print custom results
+            print("\n📊 Custom Pipeline Results:")
+            grading = results["grading_results"]
+            print(f"Overall Score: {grading['numeric_score']} ({grading['letter_grade']})")
+            print(f"Criteria Evaluated: {len(grading['per_criterion'])}")
+            
+            print("\n📝 Criterion Breakdown:")
+            for i, criterion in enumerate(grading['per_criterion'], 1):
+                print(f"{i}. {criterion['criterion_id']}: {criterion['level']}")
+                if criterion.get('justification'):
+                    print(f"   Justification: {criterion['justification'][:100]}...")
+                if criterion.get('actionable_suggestion'):
+                    print(f"   Suggestion: {criterion['actionable_suggestion']}")
+                print()
+            
+            if results.get('warnings'):
+                print("⚠️  Warnings:")
+                for warning in results['warnings']:
+                    print(f"• {warning}")
+            
+        except Exception as e:
+            print(f"❌ Custom pipeline failed: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    print("\n🎉 All examples completed!")

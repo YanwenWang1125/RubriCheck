@@ -1,39 +1,39 @@
 {
   "pipeline_info": {
     "rubric_file": "test_file/test_rubric.docx",
-    "essay_file": "test_file/test_essay.txt",
-    "timestamp": "c:\\Users\\Leo\\AI projects\\RubriCheck\\Scripts",
+    "essay_file": "test_essay.txt",
+    "timestamp": "c:\\Users\\Leo\\AI projects\\RubriCheck\\rubricheck-backend",
     "version": "1.0"
   },
   "essay_metadata": {
-    "word_count": 786,
-    "sentence_count": 43,
-    "paragraph_count": 2,
-    "character_count": 4508,
     "language_detected": "en",
+    "translated": false,
+    "target_language": "en",
+    "word_count": 53,
+    "sentence_count": 3,
+    "char_count": 446,
+    "quote_char_ratio": 0.0,
     "readability": {
-      "flesch_reading_ease": 56.43059914787861,
-      "flesch_kincaid_grade": 9.929422451032604,
-      "gunning_fog": null,
-      "ari": null,
-      "coleman_liau": null
+      "flesch_reading_ease": 10.125974842767306,
+      "flesch_kincaid_grade": 16.235849056603776,
+      "gunning_fog": 23.67044025157233,
+      "automated_readability_index": 17.262955974842768,
+      "coleman_liau_index": 19.801509433962263
     },
-    "quote_ratio": 0.003105590062111801,
-    "section_count": 0,
-    "chunk_count": 1
+    "sections": []
   },
   "essay_insights": {
     "length_assessment": {
-      "level": "good",
-      "message": "Essay has a good length for developing your arguments."
+      "level": "too_short",
+      "message": "Essay is quite short. Consider expanding your arguments with more detail and examples."
     },
     "readability_assessment": {
-      "level": "standard",
-      "message": "Essay has standard readability for academic writing."
+      "level": "very_difficult",
+      "message": "Essay is very difficult to read. Consider simplifying sentence structure."
     },
     "structure_assessment": {
-      "level": "poor",
-      "message": "Essay lacks clear structure. Consider adding an introduction, body paragraphs, and conclusion."
+      "level": "basic",
+      "message": "Essay has basic structure but could benefit from more organization."
     },
     "quote_usage": {
       "level": "low",
@@ -44,11 +44,8 @@
       "message": "Essay is in English, which is appropriate for evaluation."
     },
     "overall_quality_indicators": {
-      "indicators": [
-        "Very few paragraphs - may lack development",
-        "Contains quoted material"
-      ],
-      "overall_assessment": "Needs attention"
+      "indicators": [],
+      "overall_assessment": "Good"
     }
   },
   "rubric_info": {
@@ -71,23 +68,27 @@
           "Fair",
           "Poor"
         ],
-        "level": "Fair",
-        "justification": "The thesis is present but vague, as it discusses Aristotle's philosophy in relation to social media without a clear, original argument. The focus drifts between personal experiences and philosophical analysis.",
+        "level": "Excellent",
+        "justification": "The essay presents a clear, specific thesis linking renewable energy to national security (para 0). Subsequent paragraphs remain on topic by offering evidence, noting challenges, and addressing counterarguments, maintaining consistent focus.",
         "evidence_spans": [
           {
             "paragraph_index": 0,
-            "quote": "By taking a look at social media through the eyes of Aristotle’s philosophy, we can better understand its effects and how to use it wisely."
+            "quote": "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets."
           },
           {
             "paragraph_index": 1,
-            "quote": "The important thing is to use it thoughtfully and not let it take over our lives."
+            "quote": "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain."
+          },
+          {
+            "paragraph_index": 2,
+            "quote": "Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment."
           }
         ],
-        "actionable_suggestion": "Clarify the thesis statement to present a more original argument about the impact of social media based on Aristotle's philosophy.",
+        "actionable_suggestion": "Add a brief roadmap after the thesis that explicitly links price shocks, grid stability, and cost/policy mechanisms to the national security claim to reinforce focus throughout.",
         "refuse": false,
         "reason": "",
-        "low_confidence": false,
-        "consistency_explanation": "The chosen level of 'Fair' aligns well with the descriptor language. The justification accurately reflects that the thesis is present but vague, as it lacks a clear, original argument and the focus drifts, which is consistent with the descriptor's mention of a vague thesis and drifting focus.",
+        "low_confidence": true,
+        "consistency_explanation": "The thesis is clear and the focus appears consistent across paragraphs, but the evidence does not demonstrate that the thesis is original. Without substantiation of originality, the match to 'Excellent' is weak; 'Good' aligns more directly with the provided evidence.",
         "agreement_flag": "ok",
         "tie_break_used": false
       },
@@ -99,27 +100,27 @@
           "Fair",
           "Poor"
         ],
-        "level": "Fair",
-        "justification": "The essay demonstrates some organization but lacks a clear structure and has weak transitions between ideas. The flow from one point to another is not always smooth, making it difficult to follow the argument.",
+        "level": "Excellent",
+        "justification": "Despite its brevity (53 words), the essay presents a clear thesis, followed by support with a concession, and a counterargument with rebuttal. Transitions like “however” and the shift to “Opponents claim” create smooth, logical flow.",
         "evidence_spans": [
           {
             "paragraph_index": 0,
-            "quote": "However, on social media people would only post the best side of themselves, which is the best way to get likes, reviews and followers, this often make people pursuit 'fake happiness'."
-          },
-          {
-            "paragraph_index": 0,
-            "quote": "Social media does helps people stay connected; it often focuses on quantity over quality."
+            "quote": "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets."
           },
           {
             "paragraph_index": 1,
-            "quote": "The important thing is to use it thoughtfully and not let it take over our lives."
+            "quote": "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain."
+          },
+          {
+            "paragraph_index": 2,
+            "quote": "Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment."
           }
         ],
-        "actionable_suggestion": "Improve the organization by creating clearer topic sentences for each paragraph and ensuring smoother transitions between ideas.",
+        "actionable_suggestion": "Add a brief concluding paragraph that synthesizes the support and counterargument and explicitly ties them back to the thesis to strengthen closure and cohesion.",
         "refuse": false,
         "reason": "",
         "low_confidence": false,
-        "consistency_explanation": "The chosen level 'Fair' aligns with the descriptor language as it accurately reflects the essay's organization and transitions. The justification notes that the essay has some organization but lacks a clear structure and has weak transitions, which corresponds well with the descriptor for 'Fair': 'Some organization; transitions weak'. The evidence spans provided also illustrate the points made in the justification, supporting the assessment of the essay's logical flow.",
+        "consistency_explanation": "The evidence shows a clear thesis, followed by support with a concession and a counterargument with rebuttal, using explicit transitions (\"however,\" \"Opponents claim\") that produce a smooth, logical flow—matching \"Logical structure; smooth transitions.\"",
         "agreement_flag": "ok",
         "tie_break_used": false
       },
@@ -131,27 +132,27 @@
           "Fair",
           "Poor"
         ],
-        "level": "Fair",
-        "justification": "The essay presents some relevant evidence regarding Aristotle's views on social media, but the evidence is limited and lacks depth. The arguments made are somewhat vague and do not strongly support the claims.",
+        "level": "Poor",
+        "justification": "Claims reference unnamed reports and promised analyses but provide no concrete data, citations, or examples. With a 0% quote ratio in a 53-word essay, it lacks substantive evidence.",
         "evidence_spans": [
           {
-            "paragraph_index": 0,
-            "quote": "Aristotle believed in finding a balance between extremes."
-          },
-          {
-            "paragraph_index": 0,
-            "quote": "social media weakens real relationships and makes it harder to form honest connections."
-          },
-          {
             "paragraph_index": 1,
-            "quote": "the important thing is to use it thoughtfully and not let it take over our lives."
+            "quote": "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain."
+          },
+          {
+            "paragraph_index": 2,
+            "quote": "Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment."
+          },
+          {
+            "paragraph_index": 0,
+            "quote": "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets."
           }
         ],
-        "actionable_suggestion": "Incorporate more specific examples or studies that illustrate the impact of social media on relationships and happiness to strengthen the argument.",
+        "actionable_suggestion": "Add at least two specific, cited data points (e.g., statistics from named reports on price shocks and recent LCOE trends) and briefly explain how they support each claim within the relevant paragraphs.",
         "refuse": false,
         "reason": "",
-        "low_confidence": true,
-        "consistency_explanation": "The chosen level 'Fair' suggests limited or somewhat irrelevant evidence, which aligns with the justification stating that the evidence is limited and lacks depth. However, the evidence spans provided include relevant quotes from Aristotle that relate to social media, which could be interpreted as somewhat relevant rather than limited. This creates a contradiction between the descriptor language and the evidence presented.",
+        "low_confidence": false,
+        "consistency_explanation": "The essay is on-topic but provides no concrete data, citations, or examples—only assertions and vague references to “reports” and promised analyses. This aligns with the Poor descriptor (“Lacks evidence or off-topic”) via the lack-of-evidence clause.",
         "agreement_flag": "ok",
         "tie_break_used": false
       },
@@ -164,26 +165,26 @@
           "Poor"
         ],
         "level": "Fair",
-        "justification": "The essay provides some analysis of Aristotle's philosophy in relation to social media, but much of the content is summary and personal reflection rather than deep analytical reasoning.",
+        "justification": "The piece states positions and references evidence but offers minimal analysis of mechanisms or trade-offs. Assertions (e.g., reports, cost curves) are presented without explanation of how they support the claim.",
         "evidence_spans": [
           {
             "paragraph_index": 0,
-            "quote": "If Aristotle is still alive today, he would have mixed feelings about social media."
-          },
-          {
-            "paragraph_index": 0,
-            "quote": "However, on social media people would only post the best side of themselves, which is the best way to get likes, reviews and followers, this often make people pursuit 'fake happiness'."
+            "quote": "renewable energy is essential to national security by reducing dependence on volatile fuel markets."
           },
           {
             "paragraph_index": 1,
-            "quote": "The important thing is to use it thoughtfully and not let it take over our lives."
+            "quote": "countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain."
+          },
+          {
+            "paragraph_index": 2,
+            "quote": "Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment."
           }
         ],
-        "actionable_suggestion": "Incorporate more critical analysis of Aristotle's ideas and how they specifically apply to contemporary social media practices, rather than relying on personal anecdotes.",
+        "actionable_suggestion": "Provide a concrete causal analysis using one specific case (quantify how increased renewables reduced price-shock exposure) and explicitly evaluate the grid-stability trade-off with data.",
         "refuse": false,
         "reason": "",
-        "low_confidence": true,
-        "consistency_explanation": "The chosen level 'Fair' suggests 'Little analysis; mostly summary', but the justification states that there is 'some analysis' present. This creates a contradiction as 'Fair' implies a predominance of summary over analysis, which may not fully align with the assertion of 'some analysis'. The evidence spans also indicate a focus on summarizing thoughts rather than providing deep analytical reasoning, which could suggest a lower level than 'Fair'.",
+        "low_confidence": false,
+        "consistency_explanation": "The justification describes minimal analysis and reliance on assertions, and the cited excerpts are high-level claims or brief concessions without explaining mechanisms or linking evidence to claims. This aligns with the 'Fair' descriptor of little analysis and mostly summary.",
         "agreement_flag": "ok",
         "tie_break_used": false
       },
@@ -195,31 +196,27 @@
           "Fair",
           "Poor"
         ],
-        "level": "Fair",
-        "justification": "The writing is occasionally unclear and wordy, making it difficult to follow at times. There are several grammatical errors and awkward phrases that detract from the overall clarity.",
+        "level": "Good",
+        "justification": "Generally clear and concise with logical flow, but minor awkwardness from meta-phrases like 'This essay...' and a dense tone (readability 10.1) slightly reduces clarity.",
         "evidence_spans": [
           {
             "paragraph_index": 0,
-            "quote": "If Aristotle were to look at the technological aspect of modern world, such as social media."
+            "quote": "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets."
           },
           {
-            "paragraph_index": 0,
-            "quote": "On one hand, he is going to like how the connects of people are allows them to share ideas much easier."
+            "paragraph_index": 1,
+            "quote": "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain."
           },
           {
-            "paragraph_index": 0,
-            "quote": "this often make people pursuit 'fake happiness'."
-          },
-          {
-            "paragraph_index": 0,
-            "quote": "Social media does helps people stay connected; it often focuses on quantity over quality."
+            "paragraph_index": 2,
+            "quote": "Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment."
           }
         ],
-        "actionable_suggestion": "Revise the essay for grammatical accuracy and clarity, focusing on eliminating awkward phrases and ensuring concise expression of ideas.",
+        "actionable_suggestion": "Eliminate meta-phrases like 'This essay...' and rewrite with direct, active statements (e.g., 'Renewable energy is essential...' and split long clauses for readability).",
         "refuse": false,
         "reason": "",
         "low_confidence": false,
-        "consistency_explanation": "The chosen level of 'Fair' aligns well with the descriptor language. The justification notes that the writing is occasionally unclear and wordy, which matches the descriptor's mention of being 'Wordy or occasionally unclear.' Additionally, the evidence spans provided highlight specific instances of awkward phrases and grammatical errors, reinforcing the assessment of the writing as hard to follow and confusing at times.",
+        "consistency_explanation": "The writing is generally clear and logically organized, with only minor awkwardness from meta-phrases (e.g., “This essay…”) and dense, semicolon-linked clauses. This aligns with “Generally clear; minor awkwardness,” not the higher bar of engaging concision (“Excellent”) nor the issues of wordiness or confusion (“Fair”/“Poor”).",
         "agreement_flag": "ok",
         "tie_break_used": false
       },
@@ -231,59 +228,43 @@
           "Fair",
           "Poor"
         ],
-        "level": "Fair",
-        "justification": "The essay contains several grammatical errors and awkward phrasing that can be somewhat distracting to the reader. These errors do not completely impede understanding but detract from the overall clarity.",
+        "level": "Excellent",
+        "justification": "The essay is virtually error-free with correct spelling and punctuation, and sentences read clearly. Only a minor phrasing nuance ('less price shock') could be refined.",
         "evidence_spans": [
           {
             "paragraph_index": 0,
-            "quote": "If Aristotle were to look at the technological aspect of modern world, such as social media."
-          },
-          {
-            "paragraph_index": 0,
-            "quote": "he is going to like how the connects of people are allows them to share ideas much easier."
-          },
-          {
-            "paragraph_index": 0,
-            "quote": "this often make people pursuit “fake happiness”."
-          },
-          {
-            "paragraph_index": 0,
-            "quote": "Social media does helps people stay connected;"
-          },
-          {
-            "paragraph_index": 0,
-            "quote": "I only use WeChat to commutate with my friends"
+            "quote": "This essay argues that renewable energy is essential to national security by reducing dependence on volatile fuel markets."
           },
           {
             "paragraph_index": 1,
-            "quote": "but focusing on my online life could make me spend less time in real life."
+            "quote": "Several reports show countries with higher renewable portfolios experience less price shock; however, grid stability challenges remain."
           },
           {
-            "paragraph_index": 1,
-            "quote": "even if it’s might not be exactly what Aristotle had in his mind."
+            "paragraph_index": 2,
+            "quote": "Opponents claim costs are prohibitive; this essay demonstrates recent cost curves and policy mechanisms that offset initial investment."
           }
         ],
-        "actionable_suggestion": "Proofread the essay to correct grammatical errors and improve sentence structure for better clarity.",
+        "actionable_suggestion": "Revise the phrase \"less price shock\" to \"fewer price shocks\" to use the correct countable-noun form.",
         "refuse": false,
         "reason": "",
         "low_confidence": false,
-        "consistency_explanation": "The chosen level of 'Fair' aligns well with the descriptor language. The justification states that the essay contains several grammatical errors and awkward phrasing that are somewhat distracting, which matches the descriptor's mention of 'several errors; somewhat distracting.' Additionally, the errors are noted as not completely impeding understanding, which is consistent with the 'Fair' level, indicating that while there are issues, they do not entirely hinder comprehension.",
+        "consistency_explanation": "The samples show correct spelling and punctuation with clear, fluent sentences. The only minor usage issue ('less price shock' vs 'fewer price shocks') is negligible and consistent with 'virtually error-free,' matching the Excellent descriptor.",
         "agreement_flag": "ok",
         "tie_break_used": false
       }
     ],
-    "numeric_score": 70.0,
-    "letter_grade": "B or below",
+    "numeric_score": 82.5,
+    "letter_grade": "A-",
     "categorical_points": null,
     "reliability_flags": {
       "any_refusals": false,
       "any_low_confidence": true,
       "any_needs_review": false,
       "essay_metadata": {
-        "essay_length": 786,
+        "essay_length": 53,
         "language": "en",
-        "readability_score": 56.43059914787861,
-        "quote_ratio": 0.003105590062111801,
+        "readability_score": 10.125974842767306,
+        "quote_char_ratio": 0.0,
         "section_count": 0,
         "warnings": []
       }
