@@ -447,7 +447,7 @@ def example_step_by_step():
         print(f"❌ Error: {e}")
 
 
-if __name__ == "__main__":
+def main():
     # Manual configuration - modify these parameters as needed
     run_basic_example = True      # Set to True to run basic usage example
     run_step_by_step = True       # Set to True to run step-by-step example

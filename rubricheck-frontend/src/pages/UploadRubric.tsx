@@ -1,19 +1,37 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useApp } from '../store'
 import type { Rubric } from '../types'
+import { parseRubricFile } from '../lib/api'
 
 export default function UploadRubric() {
   const { rubric, setRubric } = useApp()
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const text = await file.text()
+
+    setIsUploading(true)
+    setUploadError(null)
+
     try {
-      const parsed = JSON.parse(text) as Rubric
-      setRubric(parsed)
+      // Check if it's a JSON file
+      if (file.type === 'application/json' || file.name.endsWith('.json')) {
+        const text = await file.text()
+        const parsed = JSON.parse(text) as Rubric
+        setRubric(parsed)
+      } else {
+        // For DOCX/TXT files, send to backend for parsing
+        const parsedRubric = await parseRubricFile(file)
+        setRubric(parsedRubric)
+      }
     } catch (err) {
-      alert('Invalid JSON rubric.')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to process file'
+      setUploadError(errorMessage)
+      console.error('File processing error:', err)
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -24,14 +42,21 @@ export default function UploadRubric() {
   return (
     <section id="rubric" className="card p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">1) Upload Rubric (JSON)</h2>
+        <h2 className="text-lg font-semibold">1) Upload Rubric</h2>
         <label className="btn cursor-pointer">
-          <input type="file" accept="application/json" className="hidden" onChange={onFile} />
-          Choose file
+          <input 
+            type="file" 
+            accept=".json,.docx,.txt,application/json,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain" 
+            className="hidden" 
+            onChange={onFile}
+            disabled={isUploading}
+          />
+          {isUploading ? 'Processing...' : 'Choose file'}
         </label>
       </div>
       <p className="text-sm text-gray-600 mb-3">
-        Provide a rubric JSON with <code>title</code>, <code>criteria[]</code> (each with <code>name</code>, <code>levels[]</code>).
+        Upload a rubric file (JSON, DOCX, or TXT) or paste JSON directly. 
+        Supported formats: <code>.json</code>, <code>.docx</code>, <code>.txt</code>
       </p>
       <textarea
         className="input min-h-[140px] font-mono"
@@ -45,6 +70,11 @@ export default function UploadRubric() {
         }}
         onPaste={onPaste}
       />
+      {uploadError && (
+        <div className="mt-3 text-sm text-red-700 bg-red-50 p-2 rounded">
+          ❌ Error: {uploadError}
+        </div>
+      )}
       {rubric && (
         <div className="mt-3 text-sm text-green-700">
           ✅ Loaded rubric: <span className="font-medium">{rubric.title}</span> ({rubric.criteria.length} criteria)

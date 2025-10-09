@@ -259,15 +259,22 @@ def parse_rubric():
         if file.filename == '':
             return jsonify({"error": "No file selected"}), 400
         
-        # Save uploaded file temporarily
-        temp_path = f"temp_{file.filename}"
-        file.save(temp_path)
+        # Check file extension
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        if file_ext not in ['.json', '.docx', '.txt']:
+            return jsonify({"error": f"Unsupported file type: {file_ext}. Supported: .json, .docx, .txt"}), 400
+        
+        # Save uploaded file temporarily with proper extension
+        import tempfile
+        with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as temp_file:
+            file.save(temp_file.name)
+            temp_path = temp_file.name
         
         try:
             # Parse rubric
             rubric = demo_parse_rubric(temp_path)
             if not rubric:
-                return jsonify({"error": "Failed to parse rubric"}), 400
+                return jsonify({"error": "Failed to parse rubric. Please check the file format and content."}), 400
             
             # Convert to frontend format
             frontend_rubric = {

@@ -992,9 +992,9 @@ def run_grading_example():
         return False
 
 
-if __name__ == "__main__":
-    success = run_grading_example()
-    if success:
-        print("\n🎉 All examples completed successfully!")
-    else:
-        print("\n❌ Some examples failed. Check the error messages above.")
+# if __name__ == "__main__":
+#     success = run_grading_example()
+#     if success:
+#         print("\n🎉 All examples completed successfully!")
+#     else:
+#         print("\n❌ Some examples failed. Check the error messages above.")

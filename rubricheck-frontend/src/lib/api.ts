@@ -14,3 +14,15 @@ export async function evaluateEssay(rubric: Rubric, essayText: string, model: st
   })
   return data
 }
+
+export async function parseRubricFile(file: File): Promise<Rubric> {
+  const formData = new FormData()
+  formData.append('file', file)
+  
+  const { data } = await api.post<Rubric>('/rubric/parse', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+  return data
+}
