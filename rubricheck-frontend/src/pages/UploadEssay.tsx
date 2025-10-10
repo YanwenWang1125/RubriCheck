@@ -1,9 +1,9 @@
 import React, { useState } from 'react'
 import { useApp } from '../store'
-import { uploadEssayFile } from '../lib/api'
+import { uploadEssayFile, parseEssayFile } from '../lib/api'
 
 export default function UploadEssay() {
-  const { essayFilePath, setEssayFilePath } = useApp()
+  const { essayFilePath, setEssayFilePath, setEssayText } = useApp()
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null)
@@ -16,10 +16,15 @@ export default function UploadEssay() {
     setUploadError(null)
 
     try {
-      // Just upload the file and get the file path
+      // Upload the file and get the file path
       const uploadResult = await uploadEssayFile(file)
       setEssayFilePath(uploadResult.file_path)
       setUploadedFileName(uploadResult.filename)
+      
+      // Also parse the essay to get the text content
+      const parseResult = await parseEssayFile(file)
+      setEssayText(parseResult.text)
+      console.log('📝 Essay text stored:', parseResult.text.length, 'characters')
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to process file'
       setUploadError(errorMessage)

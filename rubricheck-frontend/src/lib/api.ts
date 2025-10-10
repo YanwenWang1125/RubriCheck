@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { Rubric, EvaluationResult } from '../types'
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  baseURL: (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000',
   timeout: 1200000
 })
 

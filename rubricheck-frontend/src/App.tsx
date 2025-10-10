@@ -1,9 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Navbar from './components/Navbar'
 import UploadRubric from './pages/UploadRubric'
 import UploadEssay from './pages/UploadEssay'
 import RunEvaluation from './pages/RunEvaluation'
 import Results from './pages/Results'
+import StudentResults from './pages/StudentResults'
+import { loadTestData } from './utils/loadTestData'
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component<
@@ -54,21 +56,47 @@ class ErrorBoundary extends React.Component<
 }
 
 export default function App() {
+  const [currentView, setCurrentView] = useState<'main' | 'student-results'>('main')
+
+  const handleViewChange = (view: 'main' | 'student-results') => {
+    setCurrentView(view)
+  }
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen">
-        <Navbar />
-        <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
-            <UploadRubric />
-            <UploadEssay />
-          </div>
-          <RunEvaluation />
-          <Results />
-          <footer className="text-xs text-gray-500 py-8">
-            <div className="mx-auto max-w-6xl">RubriCheck · Frontend (React + Vite + Tailwind). </div>
-          </footer>
-        </main>
+        <Navbar onViewChange={handleViewChange} currentView={currentView} />
+        {currentView === 'main' ? (
+          <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
+            {/* Test Data Button - Remove in production */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-yellow-800">🧪 Development Mode</h3>
+                  <p className="text-xs text-yellow-700 mt-1">Load test data to preview Student Results without running evaluation</p>
+                </div>
+                <button
+                  onClick={loadTestData}
+                  className="px-4 py-2 bg-yellow-600 text-white text-sm rounded-md hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                >
+                  Load Test Data
+                </button>
+              </div>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              <UploadRubric />
+              <UploadEssay />
+            </div>
+            <RunEvaluation />
+            <Results onViewChange={handleViewChange} />
+            <footer className="text-xs text-gray-500 py-8">
+              <div className="mx-auto max-w-6xl">RubriCheck · Frontend (React + Vite + Tailwind). </div>
+            </footer>
+          </main>
+        ) : (
+          <StudentResults onViewChange={handleViewChange} />
+        )}
       </div>
     </ErrorBoundary>
   )
