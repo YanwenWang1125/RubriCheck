@@ -48,7 +48,7 @@ export default function StudentResults({ onViewChange }: StudentResultsProps) {
   const [viewMode, setViewMode] = useState<'annotated' | 'original'>('annotated')
   const [selectedCriterion, setSelectedCriterion] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [currentCriterionIndex, setCurrentCriterionIndex] = useState(0)
+  const [currentCriterionIndex, setCurrentCriterionIndex] = useState(-1)
   const [showConfidenceIndicators, setShowConfidenceIndicators] = useState(true)
   const [expandedCriteria, setExpandedCriteria] = useState<Set<string>>(new Set())
   const [isFeedbackPanelCollapsed, setIsFeedbackPanelCollapsed] = useState(false)
@@ -196,15 +196,15 @@ export default function StudentResults({ onViewChange }: StudentResultsProps) {
 
   const getLevelColor = (level: string) => {
     const levelColors: { [key: string]: string } = {
-      'Excellent': 'bg-emerald-100 text-emerald-800 border-emerald-300',
-      'Proficient': 'bg-sky-100 text-sky-800 border-sky-300',
-      'Meets expectations': 'bg-amber-100 text-amber-800 border-amber-300',
-      'Developing': 'bg-rose-100 text-rose-800 border-rose-300',
-      'Poor': 'bg-red-100 text-red-800 border-red-300',
-      'Good': 'bg-blue-100 text-blue-800 border-blue-300',
-      'Fair': 'bg-yellow-100 text-yellow-800 border-yellow-300'
+      'Excellent': 'bg-emerald-100 text-emerald-800 border-2 border-emerald-500',
+      'Proficient': 'bg-sky-100 text-sky-800 border-2 border-sky-500',
+      'Meets expectations': 'bg-amber-100 text-amber-800 border-2 border-amber-500',
+      'Developing': 'bg-rose-100 text-rose-800 border-2 border-rose-500',
+      'Poor': 'bg-red-100 text-red-800 border-2 border-red-500',
+      'Good': 'bg-blue-100 text-blue-800 border-2 border-blue-500',
+      'Fair': 'bg-yellow-100 text-yellow-800 border-2 border-yellow-500'
     }
-    const color = levelColors[level] || 'bg-gray-100 text-gray-800 border-gray-300'
+    const color = levelColors[level] || 'bg-gray-100 text-gray-800 border-2 border-gray-500'
     console.log(`🎨 Level color for "${level}": ${color}`)
     return color
   }
@@ -215,10 +215,18 @@ export default function StudentResults({ onViewChange }: StudentResultsProps) {
     return 'text-red-600'
   }
 
-  const getConfidenceBorder = (confidence: number) => {
-    if (confidence > 0.8) return 'border-l-green-500'
-    if (confidence > 0.6) return 'border-l-yellow-500'
-    return 'border-l-red-500'
+  const getCriterionBorderColor = (index: number) => {
+    // Use the same colors as the evidence highlights
+    const colors = ['#fef3c7', '#dbeafe', '#d1fae5', '#fce7f3', '#e9d5ff', '#fed7aa']
+    const color = colors[index % colors.length]
+    return `border-4 rounded-lg`
+  }
+
+  const getCriterionBorderStyle = (index: number) => {
+    // Use the same colors as the evidence highlights
+    const colors = ['#fef3c7', '#dbeafe', '#d1fae5', '#fce7f3', '#e9d5ff', '#fed7aa']
+    const color = colors[index % colors.length]
+    return { borderColor: color }
   }
 
   const highlightEvidence = (criterionId: string) => {
@@ -376,13 +384,19 @@ export default function StudentResults({ onViewChange }: StudentResultsProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setCurrentCriterionIndex(prev => Math.min(prev + 1, filteredCriteria.length - 1))
+        setCurrentCriterionIndex(prev => {
+          if (prev === -1) return 0 // Start from first item if none selected
+          return Math.min(prev + 1, filteredCriteria.length - 1)
+        })
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
-        setCurrentCriterionIndex(prev => Math.max(prev - 1, 0))
+        setCurrentCriterionIndex(prev => {
+          if (prev === -1) return filteredCriteria.length - 1 // Start from last item if none selected
+          return Math.max(prev - 1, 0)
+        })
       } else if (e.key === 'Enter') {
         e.preventDefault()
-        if (filteredCriteria[currentCriterionIndex]) {
+        if (currentCriterionIndex >= 0 && filteredCriteria[currentCriterionIndex]) {
           highlightEvidence(filteredCriteria[currentCriterionIndex].id)
         }
       }
@@ -394,7 +408,7 @@ export default function StudentResults({ onViewChange }: StudentResultsProps) {
 
   // Focus management
   useEffect(() => {
-    if (criteriaRefs.current[currentCriterionIndex]) {
+    if (currentCriterionIndex >= 0 && criteriaRefs.current[currentCriterionIndex]) {
       criteriaRefs.current[currentCriterionIndex]?.focus()
       criteriaRefs.current[currentCriterionIndex]?.scrollIntoView({ 
         behavior: 'smooth', 
@@ -462,7 +476,7 @@ export default function StudentResults({ onViewChange }: StudentResultsProps) {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Overall Score Summary */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-gray-900">Overall Score</h2>
             <div className="text-right">
@@ -493,7 +507,7 @@ export default function StudentResults({ onViewChange }: StudentResultsProps) {
         {/* Split View Container */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left Panel: Essay Viewer */}
-          <div className="bg-white rounded-lg shadow-sm border">
+          <div className="bg-white rounded-lg shadow-sm border-2 border-gray-300">
             <div className="p-4 border-b bg-gray-50">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">Your Essay (Annotated)</h3>
@@ -544,7 +558,7 @@ export default function StudentResults({ onViewChange }: StudentResultsProps) {
           </div>
 
           {/* Right Panel: Rubric & Feedback */}
-          <div ref={rightPanelRef} className="bg-white rounded-lg shadow-sm border sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto sticky-panel">
+          <div ref={rightPanelRef} className="bg-white rounded-lg shadow-sm border-2 border-gray-300 sticky top-24 self-start max-h-[calc(100vh-8rem)] overflow-y-auto sticky-panel">
             <div className="p-4 border-b bg-gray-50">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-lg font-semibold text-gray-900">Rubric & Feedback</h3>
@@ -583,9 +597,10 @@ export default function StudentResults({ onViewChange }: StudentResultsProps) {
                       key={criterion.id}
                       id={`criterion-${criterion.id}`}
                       ref={el => criteriaRefs.current[index] = el}
-                      className={`border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${getConfidenceBorder(criterion.confidence)} ${
+                      className={`${getCriterionBorderColor(index)} focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         currentCriterionIndex === index ? 'ring-2 ring-blue-500' : ''
                       }`}
+                      style={getCriterionBorderStyle(index)}
                       tabIndex={0}
                       data-criterion-id={criterion.id}
                     >
