@@ -597,7 +597,7 @@ export default function StudentResults({ onViewChange }: StudentResultsProps) {
                       key={criterion.id}
                       id={`criterion-${criterion.id}`}
                       ref={el => criteriaRefs.current[index] = el}
-                      className={`${getCriterionBorderColor(index)} focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      className={`${getCriterionBorderColor(index)} focus:outline-none focus:ring-2 focus:ring-blue-100 ${
                         currentCriterionIndex === index ? 'ring-2 ring-blue-500' : ''
                       }`}
                       style={getCriterionBorderStyle(index)}
