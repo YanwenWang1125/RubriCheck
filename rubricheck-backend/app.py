@@ -594,7 +594,8 @@ if __name__ == '__main__':
     # Get configuration from environment
     host = os.getenv('FLASK_HOST', '0.0.0.0')
     port = int(os.getenv('FLASK_PORT', 8000))
-    debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    # debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
+    debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'false'
     
     logger.info(f"Starting RubriCheck API server on {host}:{port}")
     logger.info(f"Debug mode: {debug}")
