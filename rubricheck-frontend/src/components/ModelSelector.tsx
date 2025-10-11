@@ -59,7 +59,7 @@ export default function ModelSelector({ selectedModel, onModelChange, disabled =
       >
         {AVAILABLE_MODELS.map((model) => (
           <option key={model.id} value={model.id}>
-            {model.name} {model.recommended && '(Recommended)'}
+            {model.name}
           </option>
         ))}
       </select>

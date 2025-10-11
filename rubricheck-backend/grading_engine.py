@@ -90,12 +90,16 @@ except ImportError:
 # Prompt templates
 # ===============================
 
-SYSTEM_BASE = """You are RubriCheck, an AI grader that outputs strict JSON for each criterion. 
+SYSTEM_BASE = """You are RubriCheck, an AI grader that provides RICH, DETAILED analysis with comprehensive evidence spans. 
 Rules:
 - Only quote text present in the essay. Do not fabricate citations.
-- For evidence, quote short excerpts (<= {max_span_chars} characters per excerpt) and include paragraph indices.
+- For evidence, find MULTIPLE relevant excerpts (<= {max_span_chars} characters per excerpt) and include paragraph indices.
+- Provide 2-4 evidence spans per criterion when possible, including both positive and negative evidence.
+- Use complete sentences or meaningful phrases for evidence, not single words or fragments.
+- Include context around key points to make evidence more meaningful.
 - If the rubric content for this criterion is ambiguous or self-contradictory, REFUSE with {{"refuse": true, "reason": "..."}} using the exact JSON schema.
-- No praise; provide one actionable suggestion per criterion.
+- Provide detailed, specific justifications that reference the evidence spans.
+- Give concrete, actionable suggestions that directly address the evidence found.
 - Output MUST be valid JSON with the exact keys specified—no extra keys, no prose outside JSON.
 """
 
@@ -503,7 +507,7 @@ DESCRIPTORS (for this criterion only)
 """
     
     return f"""
-You will grade ALL criteria for this essay in a single response.
+You will grade ALL criteria for this essay in a single response with RICH, DETAILED analysis.
 
 {criteria_section}
 
@@ -512,18 +516,34 @@ You will grade ALL criteria for this essay in a single response.
 ESSAY (paragraph-indexed)
 {essay_block}
 
-REQUIREMENTS
+REQUIREMENTS FOR RICH ANALYSIS:
 1) Return STRICT JSON with an array called "criteria_results"
 2) Each item in the array should have EXACTLY these keys:
    - "criterion_id" (string)
    - "valid_levels" (array of strings)
    - "level" (string, must be one of valid_levels)
-   - "justification" (string, 1-3 sentences)
+   - "justification" (string, 2-4 detailed sentences explaining your reasoning)
    - "evidence_spans" (array of objects with "paragraph_index" and "quote")
-   - "actionable_suggestion" (string, one concrete improvement)
-3) "evidence_spans": each quote must be <= {max_span_chars} chars and appear verbatim in the essay
-4) Consider essay metadata (word count, readability, language) in your evaluation
-5) Never invent content; only quote from the essay paragraphs provided
+   - "actionable_suggestion" (string, one concrete, specific improvement)
+
+EVIDENCE SPAN REQUIREMENTS (CRITICAL):
+3) "evidence_spans": 
+   - Find MULTIPLE evidence spans per criterion (aim for 2-4 spans)
+   - Each quote must be <= {max_span_chars} characters
+   - Quotes must appear VERBATIM in the essay paragraphs
+   - Include both POSITIVE evidence (what's done well) and NEGATIVE evidence (what needs improvement)
+   - Prioritize the MOST RELEVANT and STRONGEST evidence
+   - Include context around key points (don't just grab single words)
+   - Use complete sentences or meaningful phrases, not fragments
+
+ANALYSIS DEPTH:
+4) Provide detailed justification that:
+   - References specific evidence spans
+   - Explains WHY the evidence supports the grade level
+   - Considers the essay's overall quality and coherence
+   - Acknowledges both strengths and weaknesses
+5) Consider essay metadata (word count, readability, language) in your evaluation
+6) Never invent content; only quote from the essay paragraphs provided
 
 Return ONLY the JSON object with the "criteria_results" array—no commentary.
 """
@@ -533,7 +553,7 @@ def parse_combined_criteria_result(
     result: Dict[str, Any],
     rubric: Dict[str, Any]
 ) -> List[CriterionResult]:
-    """Parse the combined criteria result into individual CriterionResult objects."""
+    """Parse the combined criteria result into individual CriterionResult objects with enhanced evidence validation."""
     criteria_results = result.get("criteria_results", [])
     
     parsed_results = []
@@ -541,12 +561,40 @@ def parse_combined_criteria_result(
         # Get the original criterion for reference
         original_criterion = rubric["criteria"][i] if i < len(rubric["criteria"]) else {}
         
+        # Validate and enhance evidence spans
+        evidence_spans = criterion_data.get("evidence_spans", [])
+        validated_spans = []
+        
+        for span in evidence_spans:
+            if isinstance(span, dict) and "quote" in span and "paragraph_index" in span:
+                # Ensure quote is not empty and has reasonable length
+                quote = span.get("quote", "").strip()
+                if quote and len(quote) > 10:  # Minimum meaningful length
+                    validated_spans.append({
+                        "quote": quote,
+                        "paragraph_index": span.get("paragraph_index"),
+                        "start": span.get("start", 0),
+                        "end": span.get("end", len(quote))
+                    })
+        
+        # If no valid evidence spans found, try to create a fallback
+        if not validated_spans and criterion_data.get("justification"):
+            # Create a minimal evidence span from the justification context
+            justification = criterion_data.get("justification", "")
+            if justification and len(justification) > 20:
+                validated_spans.append({
+                    "quote": justification[:200] + "..." if len(justification) > 200 else justification,
+                    "paragraph_index": 0,
+                    "start": 0,
+                    "end": len(justification)
+                })
+        
         parsed_result = CriterionResult(
             criterion_id=criterion_data.get("criterion_id", original_criterion.get("id", f"criterion_{i}")),
             valid_levels=criterion_data.get("valid_levels", original_criterion.get("valid_levels", [])),
             level=criterion_data.get("level"),
             justification=criterion_data.get("justification"),
-            evidence_spans=criterion_data.get("evidence_spans", []),
+            evidence_spans=validated_spans,
             actionable_suggestion=criterion_data.get("actionable_suggestion"),
             refuse=bool(criterion_data.get("refuse", False)),
             reason=criterion_data.get("reason"),

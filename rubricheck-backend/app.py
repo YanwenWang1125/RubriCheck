@@ -240,8 +240,8 @@ class RubriCheckAPI:
             mode_text = "fast mode" if fast_mode else "full mode"
             logger.info(f"Grading essay with AI using model: {model} ({mode_text})")
             
-            # Use optimized max_span_chars
-            max_span_chars = config.max_evidence_span_chars if config else 240
+            # Use enhanced max_span_chars for richer evidence
+            max_span_chars = 500  # Increased from 240 for richer evidence spans
             grade_summary = grade_essay(backend_rubric, processed_essay, max_span_chars=max_span_chars, model=model, fast_mode=fast_mode)
             logger.info(f"Grading complete: {grade_summary.numeric_score} ({grade_summary.letter})")
             
