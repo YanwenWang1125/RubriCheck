@@ -735,7 +735,7 @@ def internal_error(error):
 if __name__ == '__main__':
     # Get configuration from environment
     host = os.getenv('FLASK_HOST', '0.0.0.0')
-    port = int(os.getenv('FLASK_PORT', 8000))
+    port = int(os.getenv('PORT', os.getenv('FLASK_PORT', 8000)))
     # debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     debug = os.getenv('FLASK_DEBUG', 'False').lower() == 'false'
     
