@@ -1,4 +1,4 @@
-# RubriCheck Backend Requirements - Memory Optimized
+# RubriCheck Backend Requirements - Lightweight Version
 # Core web framework
 Flask==2.3.3
 Flask-CORS==4.0.0
