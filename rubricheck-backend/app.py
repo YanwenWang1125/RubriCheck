@@ -67,7 +67,8 @@ app = Flask(__name__)
 
 # Configure CORS with specific frontend origin
 frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
-CORS(app, resources={r"/*": {"origins": [frontend_origin]}}, supports_credentials=False)
+# Allow all origins for testing (remove in production)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
 
 class RubriCheckAPI:
     """API wrapper for RubriCheck pipeline."""
