@@ -13,7 +13,7 @@ export interface AIModel {
 export const AVAILABLE_MODELS: AIModel[] = [
   {
     id: 'gpt-5-mini',
-    name: 'GPT-5 Mini',
+    name: 'GPT-5 Mini (Recommended)',
     description: 'Latest generation model with enhanced reasoning capabilities',
     speed: 'fast',
     quality: 'high',

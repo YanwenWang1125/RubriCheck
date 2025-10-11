@@ -62,6 +62,24 @@ except ImportError as e:
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Model configuration
+ALLOWED_MODELS = {
+    "gpt-5-mini": {"tier": "recommended", "display_name": "GPT-5 Mini (Recommended)"},
+    "gpt-5-nano": {"tier": "ultra-fast", "display_name": "GPT-5 Nano"},
+    "gpt-4.1-mini": {"tier": "fallback", "display_name": "GPT-4.1 Mini"},
+}
+DEFAULT_MODEL = "gpt-5-mini"
+
+def validate_model(model: str) -> str:
+    """Validate and return the model ID, or raise an error if invalid."""
+    if not model:
+        return DEFAULT_MODEL
+    
+    if model not in ALLOWED_MODELS:
+        raise ValueError(f"Unknown model '{model}'. Allowed models: {', '.join(ALLOWED_MODELS.keys())}")
+    
+    return model
+
 # Initialize Flask app
 app = Flask(__name__)
 
@@ -333,6 +351,14 @@ class RubriCheckAPI:
 # Initialize API
 api_handler = RubriCheckAPI()
 
+@app.route('/models', methods=['GET'])
+def get_available_models():
+    """Get list of available models and default model."""
+    return jsonify({
+        "models": ALLOWED_MODELS,
+        "default_model": DEFAULT_MODEL
+    })
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint."""
@@ -371,7 +397,13 @@ def evaluate():
         
         # Get optimization config for defaults
         config = get_optimization_config() if OPTIMIZATION_AVAILABLE else None
-        model = data.get('model', config.preferred_model if config else 'gpt-4o-mini')
+        
+        # Validate model parameter
+        try:
+            model = validate_model(data.get('model'))
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        
         fast_mode = data.get('fastMode', config.use_fast_mode_by_default if config else True)
         
         # Check if using file paths (development) or direct data (production)

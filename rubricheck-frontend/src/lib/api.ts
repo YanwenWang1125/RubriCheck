@@ -73,3 +73,8 @@ export async function parseEssayFile(file: File): Promise<{ text: string; filena
   })
   return data
 }
+
+export async function getAvailableModels(): Promise<{ models: Record<string, any>; default_model: string }> {
+  const { data } = await api.get<{ models: Record<string, any>; default_model: string }>('/models')
+  return data
+}
