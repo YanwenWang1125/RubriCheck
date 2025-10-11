@@ -64,7 +64,10 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS for frontend communication
+
+# Configure CORS with specific frontend origin
+frontend_origin = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+CORS(app, resources={r"/*": {"origins": [frontend_origin]}}, supports_credentials=False)
 
 class RubriCheckAPI:
     """API wrapper for RubriCheck pipeline."""
