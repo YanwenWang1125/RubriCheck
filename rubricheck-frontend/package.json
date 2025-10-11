@@ -11,6 +11,8 @@
   "dependencies": {
     "@vitejs/plugin-react": "^4.7.0",
     "axios": "^1.7.7",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.3",
     "lucide-react": "^0.453.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

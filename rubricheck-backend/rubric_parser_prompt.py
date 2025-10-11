@@ -208,6 +208,17 @@ class RubricParser:
     
     def _parse_rubric_with_llm(self, raw_text: str, method_hint: str = "narrative") -> Dict[str, Any]:
         """Parse rubric using OpenAI LLM with structured outputs."""
+        # Check cache first
+        if OPTIMIZATION_AVAILABLE:
+            cache_manager = get_cache_manager()
+            cached_result = cache_manager.get_rubric(raw_text)
+            if cached_result:
+                print("📦 Using cached rubric parsing result")
+                return cached_result
+        
+        # Get optimization config
+        config = get_optimization_config() if OPTIMIZATION_AVAILABLE else None
+        
         # Build the system message with schema instructions
         system_message = (
             "You are a precise rubric parser. Convert the given rubric into strictly valid JSON that "
@@ -251,20 +262,34 @@ class RubricParser:
         )
         
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
+            # Prepare request parameters with optimization settings
+            request_params = {
+                "model": self.model,
+                "messages": [
                     {"role": "system", "content": system_message},
                     {"role": "user", "content": user_message}
                 ],
-                response_format={"type": "json_object"},
-                max_tokens=2048,
-                temperature=1.0
-            )
+                "response_format": {"type": "json_object"},
+                "temperature": config.temperature if config else 1.0
+            }
+            
+            # Add max_tokens if configured
+            if config and config.max_tokens_per_request:
+                request_params["max_tokens"] = config.max_tokens_per_request
+            else:
+                request_params["max_tokens"] = 2048
+            
+            response = self.client.chat.completions.create(**request_params)
             
             # Extract the JSON response
             json_text = response.choices[0].message.content
             parsed = json.loads(json_text)
+            
+            # Cache the result
+            if OPTIMIZATION_AVAILABLE:
+                cache_manager = get_cache_manager()
+                cache_manager.set_rubric(raw_text, parsed)
+                print("💾 Cached rubric parsing result")
             
             return parsed
             
@@ -510,6 +535,15 @@ def demo_parse_rubric(file_path: str, model: str = "gpt-4o-mini") -> Dict[str, A
 
 # Import shared utilities
 from utils import get_api_key_from_env, get_openai_client
+
+# Import optimization modules
+try:
+    from optimization_config import get_optimization_config
+    from cache_manager import get_cache_manager
+    OPTIMIZATION_AVAILABLE = True
+except ImportError:
+    OPTIMIZATION_AVAILABLE = False
+    print("⚠️  Optimization modules not available - using default settings")
 
 def run_parser_example():
     """Main function to parse a rubric file."""

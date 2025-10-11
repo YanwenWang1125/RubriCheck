@@ -47,6 +47,17 @@ except ImportError as e:
     print("Make sure all RubriCheck modules are in the same directory")
     sys.exit(1)
 
+# Import optimization modules
+try:
+    from optimization_config import get_optimization_config, update_optimization_config
+    from cache_manager import get_cache_manager
+    OPTIMIZATION_AVAILABLE = True
+    print("Optimization modules loaded successfully!")
+except ImportError as e:
+    OPTIMIZATION_AVAILABLE = False
+    print(f"⚠️  Optimization modules not available: {e}")
+    print("Performance optimizations will be limited")
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -168,16 +179,36 @@ class RubriCheckAPI:
         try:
             logger.info("Starting essay evaluation...")
             
-            # Step 1: Process essay
-            logger.info("Processing essay...")
-            options = PreprocessOptions(
-                target_language="en",
-                translate_non_english=True,
-                redact_pii=True,
-                chunk_max_paragraphs=6
-            )
-            processed_essay = self.preprocessor.run(essay_text, options)
-            logger.info(f"Essay processed: {len(processed_essay.paragraphs)} paragraphs, {processed_essay.metadata.word_count} words")
+            # Get optimization config
+            config = get_optimization_config() if OPTIMIZATION_AVAILABLE else None
+            
+            # Check cache for essay processing
+            cache_manager = get_cache_manager() if OPTIMIZATION_AVAILABLE else None
+            processed_essay = None
+            
+            if cache_manager:
+                cached_essay = cache_manager.get_essay_processing(essay_text)
+                if cached_essay:
+                    logger.info("📦 Using cached essay processing result")
+                    processed_essay = cached_essay
+            
+            if not processed_essay:
+                # Step 1: Process essay
+                logger.info("Processing essay...")
+                options = PreprocessOptions(
+                    target_language="en",
+                    translate_non_english=True,
+                    redact_pii=True,
+                    chunk_max_paragraphs=config.chunk_max_paragraphs if config else 6,
+                    chunk_overlap_paragraphs=config.chunk_overlap_paragraphs if config else 1
+                )
+                processed_essay = self.preprocessor.run(essay_text, options)
+                logger.info(f"Essay processed: {len(processed_essay.paragraphs)} paragraphs, {processed_essay.metadata.word_count} words")
+                
+                # Cache the processed essay
+                if cache_manager:
+                    cache_manager.set_essay_processing(essay_text, processed_essay)
+                    logger.info("💾 Cached essay processing result")
             
             # Step 2: Convert rubric format
             logger.info("Converting rubric format...")
@@ -186,7 +217,10 @@ class RubriCheckAPI:
             # Step 3: Grade essay (using fast mode for better performance)
             mode_text = "fast mode" if fast_mode else "full mode"
             logger.info(f"Grading essay with AI using model: {model} ({mode_text})")
-            grade_summary = grade_essay(backend_rubric, processed_essay, max_span_chars=240, model=model, fast_mode=fast_mode)
+            
+            # Use optimized max_span_chars
+            max_span_chars = config.max_evidence_span_chars if config else 240
+            grade_summary = grade_essay(backend_rubric, processed_essay, max_span_chars=max_span_chars, model=model, fast_mode=fast_mode)
             logger.info(f"Grading complete: {grade_summary.numeric_score} ({grade_summary.letter})")
             
             # Step 4: Convert result to frontend format
@@ -298,11 +332,29 @@ api_handler = RubriCheckAPI()
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint."""
-    return jsonify({
+    health_info = {
         "status": "healthy",
         "message": "RubriCheck API is running",
         "version": "1.0.0"
-    })
+    }
+    
+    # Add optimization info if available
+    if OPTIMIZATION_AVAILABLE:
+        config = get_optimization_config()
+        cache_manager = get_cache_manager()
+        health_info.update({
+            "optimization": {
+                "enabled": True,
+                "fast_mode_default": config.use_fast_mode_by_default,
+                "preferred_model": config.preferred_model,
+                "cache_enabled": config.enable_rubric_caching or config.enable_essay_caching,
+                "cache_stats": cache_manager.get_stats()
+            }
+        })
+    else:
+        health_info["optimization"] = {"enabled": False}
+    
+    return jsonify(health_info)
 
 @app.route('/evaluate', methods=['POST'])
 def evaluate():
@@ -313,8 +365,10 @@ def evaluate():
         if not data:
             return jsonify({"error": "No JSON data provided"}), 400
         
-        model = data.get('model', 'gpt-5-mini')  # Default to gpt-5-mini
-        fast_mode = data.get('fastMode', True)  # Default to fast mode
+        # Get optimization config for defaults
+        config = get_optimization_config() if OPTIMIZATION_AVAILABLE else None
+        model = data.get('model', config.preferred_model if config else 'gpt-4o-mini')
+        fast_mode = data.get('fastMode', config.use_fast_mode_by_default if config else True)
         
         # Check if using file paths (development) or direct data (production)
         rubric_path = data.get('rubricPath')
@@ -581,6 +635,94 @@ def extract_essay_text(file_path: str) -> str:
     except Exception as e:
         logger.error(f"Error extracting text from {file_path}: {e}")
         return f"Error extracting text: {str(e)}"
+
+@app.route('/optimization/config', methods=['GET'])
+def get_optimization_config_endpoint():
+    """Get current optimization configuration."""
+    if not OPTIMIZATION_AVAILABLE:
+        return jsonify({"error": "Optimization not available"}), 503
+    
+    config = get_optimization_config()
+    cache_manager = get_cache_manager()
+    
+    return jsonify({
+        "config": {
+            "use_fast_mode_by_default": config.use_fast_mode_by_default,
+            "preferred_model": config.preferred_model,
+            "max_tokens_per_request": config.max_tokens_per_request,
+            "temperature": config.temperature,
+            "enable_rubric_caching": config.enable_rubric_caching,
+            "enable_essay_caching": config.enable_essay_caching,
+            "cache_ttl_seconds": config.cache_ttl_seconds,
+            "max_essay_length_chars": config.max_essay_length_chars,
+            "max_evidence_span_chars": config.max_evidence_span_chars,
+            "chunk_overlap_paragraphs": config.chunk_overlap_paragraphs,
+            "chunk_max_paragraphs": config.chunk_max_paragraphs,
+            "timeout_seconds": config.timeout_seconds,
+            "retry_attempts": config.retry_attempts,
+            "retry_delay_seconds": config.retry_delay_seconds,
+            "max_file_size_mb": config.max_file_size_mb,
+            "max_rubric_criteria": config.max_rubric_criteria,
+            "max_essay_paragraphs": config.max_essay_paragraphs
+        },
+        "cache_stats": cache_manager.get_stats()
+    })
+
+@app.route('/optimization/config', methods=['POST'])
+def update_optimization_config_endpoint():
+    """Update optimization configuration."""
+    if not OPTIMIZATION_AVAILABLE:
+        return jsonify({"error": "Optimization not available"}), 503
+    
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No configuration data provided"}), 400
+        
+        # Update configuration
+        update_optimization_config(**data)
+        
+        return jsonify({
+            "message": "Configuration updated successfully",
+            "config": get_optimization_config().__dict__
+        })
+        
+    except Exception as e:
+        logger.error(f"Error updating optimization config: {e}")
+        return jsonify({"error": "Failed to update configuration"}), 500
+
+@app.route('/optimization/cache/clear', methods=['POST'])
+def clear_cache_endpoint():
+    """Clear all cached data."""
+    if not OPTIMIZATION_AVAILABLE:
+        return jsonify({"error": "Optimization not available"}), 503
+    
+    try:
+        cache_manager = get_cache_manager()
+        cache_manager.clear()
+        
+        return jsonify({
+            "message": "Cache cleared successfully",
+            "cache_stats": cache_manager.get_stats()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error clearing cache: {e}")
+        return jsonify({"error": "Failed to clear cache"}), 500
+
+@app.route('/optimization/cache/stats', methods=['GET'])
+def get_cache_stats_endpoint():
+    """Get cache statistics."""
+    if not OPTIMIZATION_AVAILABLE:
+        return jsonify({"error": "Optimization not available"}), 503
+    
+    try:
+        cache_manager = get_cache_manager()
+        return jsonify(cache_manager.get_stats())
+        
+    except Exception as e:
+        logger.error(f"Error getting cache stats: {e}")
+        return jsonify({"error": "Failed to get cache statistics"}), 500
 
 @app.errorhandler(404)
 def not_found(error):

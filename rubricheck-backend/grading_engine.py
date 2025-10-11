@@ -40,6 +40,15 @@ OPENAI_MODEL = os.environ.get("RUBRICHECK_MODEL", "gpt-5")
 # Import shared utilities
 from utils import get_api_key_from_env, get_openai_client
 
+# Import optimization modules
+try:
+    from optimization_config import get_optimization_config
+    from cache_manager import get_cache_manager
+    OPTIMIZATION_AVAILABLE = True
+except ImportError:
+    OPTIMIZATION_AVAILABLE = False
+    print("⚠️  Optimization modules not available - using default settings")
+
 # ===============================
 # Data structures (expected inputs)
 # ===============================
@@ -186,15 +195,28 @@ def llm_json(prompt: str, system: str, model: str = None) -> Dict[str, Any]:
     Calls the OpenAI chat completion and attempts to parse JSON only.
     We ask the model to output ONLY JSON. If it fails, we rethrow with the raw text.
     """
-    model_to_use = model or OPENAI_MODEL
-    resp = get_openai_client().chat.completions.create(
-        model=model_to_use,
-        temperature=1.0,
-        messages=[
+    # Get optimization config
+    config = get_optimization_config() if OPTIMIZATION_AVAILABLE else None
+    
+    model_to_use = model or (config.preferred_model if config else OPENAI_MODEL)
+    temperature = config.temperature if config else 1.0
+    max_tokens = config.max_tokens_per_request if config else None
+    
+    # Prepare request parameters
+    request_params = {
+        "model": model_to_use,
+        "temperature": temperature,
+        "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": prompt}
         ]
-    )
+    }
+    
+    # Add max_tokens if configured
+    if max_tokens:
+        request_params["max_tokens"] = max_tokens
+    
+    resp = get_openai_client().chat.completions.create(**request_params)
     txt = resp.choices[0].message.content.strip()
     # Simple JSON guard:
     # Extract first JSON object found:
@@ -554,6 +576,23 @@ def grade_essay(
         model: OpenAI model to use
         fast_mode: If True, use single API call for all criteria (much faster)
     """
+    # Get optimization config
+    config = get_optimization_config() if OPTIMIZATION_AVAILABLE else None
+    
+    # Apply optimization settings
+    if config:
+        # Use configured fast mode if not explicitly set
+        if fast_mode is None:
+            fast_mode = config.use_fast_mode_by_default
+        
+        # Limit essay length for processing
+        if len(processed_essay.paragraphs) > config.max_essay_paragraphs:
+            print(f"⚠️  Essay has {len(processed_essay.paragraphs)} paragraphs, limiting to {config.max_essay_paragraphs} for performance")
+            processed_essay.paragraphs = processed_essay.paragraphs[:config.max_essay_paragraphs]
+        
+        # Use configured evidence span length
+        max_span_chars = min(max_span_chars, config.max_evidence_span_chars)
+    
     if fast_mode:
         # Single API call for all criteria (much faster and cheaper)
         results = evaluate_all_criteria_single_call(rubric, processed_essay, max_span_chars, model)
