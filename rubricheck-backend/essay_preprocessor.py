@@ -632,76 +632,76 @@ def _print_summary(proc: ProcessedEssay) -> None:
             print(" -", w)
 
 
-if __name__ == "__main__":
-    # Manual configuration - modify these parameters as needed
-    essay_file_path = None  # Set to file path if you want to load from file, otherwise None
-    enable_pii_redaction = True  # Set to False to disable PII redaction
-    enable_translation = True  # Set to False to disable translation
-    output_json = False  # Set to True to output JSON instead of summary
+# if __name__ == "__main__":
+#     # Manual configuration - modify these parameters as needed
+#     essay_file_path = None  # Set to file path if you want to load from file, otherwise None
+#     enable_pii_redaction = True  # Set to False to disable PII redaction
+#     enable_translation = True  # Set to False to disable translation
+#     output_json = False  # Set to True to output JSON instead of summary
     
-    # Sample essay text for demonstration
-    DEMO_TEXT = """
+#     # Sample essay text for demonstration
+#     DEMO_TEXT = """
 
-Moss, Howard (1922-1987)   Howard Moss was an important practitioner of formal verse in the mid-twentieth century. He also had an uncanny ability to envision—and thereby in his poems to transform—nature into the environment created by humanity, bringing it into the realm of civilization; he strove to formalize nature, in keeping with his view of what poetry should be. He once remarked, "What my poems are really about […] is the experience of hovering between the forms of nature and the forms of art" (Leiter 29). Moss set an example for his generation among poets who believed in explicit order, and for later poets who have identified themselves with NEW FORMALISM. He was also the poetry editor at The New Yorker magazine from 1950 until shortly before his death, a position that allowed him to orchestrate much of mainstream American writing.
+# Moss, Howard (1922-1987)   Howard Moss was an important practitioner of formal verse in the mid-twentieth century. He also had an uncanny ability to envision—and thereby in his poems to transform—nature into the environment created by humanity, bringing it into the realm of civilization; he strove to formalize nature, in keeping with his view of what poetry should be. He once remarked, "What my poems are really about […] is the experience of hovering between the forms of nature and the forms of art" (Leiter 29). Moss set an example for his generation among poets who believed in explicit order, and for later poets who have identified themselves with NEW FORMALISM. He was also the poetry editor at The New Yorker magazine from 1950 until shortly before his death, a position that allowed him to orchestrate much of mainstream American writing.
 
-Moss was born and raised in New York City. In 1942, he won Poetry magazine's Janet Sewall David Award for his own poetry. His first book was published in 1946. He was inducted into the American Academy and Institute of Arts and Letters in 1968, and won the National Book Award for poetry for his Selected Poems in 1971. His New Selected Poems (1984) was awarded the Lenore Marshall / Nation Poetry Prize in 1986, a year when he received a fellowship from the Academy of American Poets.
+# Moss was born and raised in New York City. In 1942, he won Poetry magazine's Janet Sewall David Award for his own poetry. His first book was published in 1946. He was inducted into the American Academy and Institute of Arts and Letters in 1968, and won the National Book Award for poetry for his Selected Poems in 1971. His New Selected Poems (1984) was awarded the Lenore Marshall / Nation Poetry Prize in 1986, a year when he received a fellowship from the Academy of American Poets.
 
-All of Moss's work possesses a subtle finish. His early and middle poems are end-rhymed and metered, his later work freer—but all of it has a striking regularity of meter and tone. The prevalent themes in Moss's work involve fundamental issues such as change in life, human relationships, loss, and death. He writes ably of "the difficulty of love, the decay of the body, the passing of time, and the inevitability of death," all set against "the inexhaustible beauty of the natural world," as Dana Gioia has observed (102). He is, in fact, a great elegist who can portray attachment and loss with stunning acuity through graphic simplicity and bitter irony.
+# All of Moss's work possesses a subtle finish. His early and middle poems are end-rhymed and metered, his later work freer—but all of it has a striking regularity of meter and tone. The prevalent themes in Moss's work involve fundamental issues such as change in life, human relationships, loss, and death. He writes ably of "the difficulty of love, the decay of the body, the passing of time, and the inevitability of death," all set against "the inexhaustible beauty of the natural world," as Dana Gioia has observed (102). He is, in fact, a great elegist who can portray attachment and loss with stunning acuity through graphic simplicity and bitter irony.
 
-In "Elegy for My Sister" (1980) he painstakingly details his sister's fatal disease and her struggle to cope with it. Trying to rise from her bed, her leg breaks "simply by standing up"; her bones have been "[m]elted into a kind of eggshell sawdust" by chemotherapy. His metaphors go beyond physical distress to show the plight of the soul. And in "Elegy for My Father" (1954) intense pain, dying and separation are made vivid through paradox. His father, for example, is freed from life by his pain, a "double-dealing enemy."
+# In "Elegy for My Sister" (1980) he painstakingly details his sister's fatal disease and her struggle to cope with it. Trying to rise from her bed, her leg breaks "simply by standing up"; her bones have been "[m]elted into a kind of eggshell sawdust" by chemotherapy. His metaphors go beyond physical distress to show the plight of the soul. And in "Elegy for My Father" (1954) intense pain, dying and separation are made vivid through paradox. His father, for example, is freed from life by his pain, a "double-dealing enemy."
 
-Moss's finely crafted verse is matched by his willingness to account for the peripatetic and otherwise insignificant details of living, making them at times monumental. In his work the truth peeks out through artifice.
-"""
+# Moss's finely crafted verse is matched by his willingness to account for the peripatetic and otherwise insignificant details of living, making them at times monumental. In his work the truth peeks out through artifice.
+# """
 
-    # Load text from file or use demo text
-    if essay_file_path:
-        print(f"Loading essay from file: {essay_file_path}")
-        try:
-            with open(essay_file_path, "r", encoding="utf-8") as f:
-                text = f.read()
-        except FileNotFoundError:
-            print(f"Error: File '{essay_file_path}' not found. Using demo text instead.")
-            text = DEMO_TEXT
-        except Exception as e:
-            print(f"Error reading file: {e}. Using demo text instead.")
-            text = DEMO_TEXT
-    else:
-        print("Using demo text for processing...")
-        text = DEMO_TEXT
+#     # Load text from file or use demo text
+#     if essay_file_path:
+#         print(f"Loading essay from file: {essay_file_path}")
+#         try:
+#             with open(essay_file_path, "r", encoding="utf-8") as f:
+#                 text = f.read()
+#         except FileNotFoundError:
+#             print(f"Error: File '{essay_file_path}' not found. Using demo text instead.")
+#             text = DEMO_TEXT
+#         except Exception as e:
+#             print(f"Error reading file: {e}. Using demo text instead.")
+#             text = DEMO_TEXT
+#     else:
+#         print("Using demo text for processing...")
+#         text = DEMO_TEXT
 
-    # Initialize preprocessor with NoOp translator (no actual translation)
-    preprocessor = EssayPreprocessor(translator=NoOpTranslator())
+#     # Initialize preprocessor with NoOp translator (no actual translation)
+#     preprocessor = EssayPreprocessor(translator=NoOpTranslator())
     
-    # Configure processing options
-    options = PreprocessOptions(
-        target_language="en",
-        translate_non_english=enable_translation,
-        redact_pii=enable_pii_redaction,
-        chunk_max_paragraphs=6,
-        chunk_overlap_paragraphs=1
-    )
+#     # Configure processing options
+#     options = PreprocessOptions(
+#         target_language="en",
+#         translate_non_english=enable_translation,
+#         redact_pii=enable_pii_redaction,
+#         chunk_max_paragraphs=6,
+#         chunk_overlap_paragraphs=1
+#     )
     
-    print(f"Processing options:")
-    print(f"  - PII Redaction: {'Enabled' if enable_pii_redaction else 'Disabled'}")
-    print(f"  - Translation: {'Enabled' if enable_translation else 'Disabled'}")
-    print(f"  - Target Language: {options.target_language}")
-    print(f"  - Chunk Max Paragraphs: {options.chunk_max_paragraphs}")
-    print(f"  - Chunk Overlap: {options.chunk_overlap_paragraphs}")
-    print()
+#     print(f"Processing options:")
+#     print(f"  - PII Redaction: {'Enabled' if enable_pii_redaction else 'Disabled'}")
+#     print(f"  - Translation: {'Enabled' if enable_translation else 'Disabled'}")
+#     print(f"  - Target Language: {options.target_language}")
+#     print(f"  - Chunk Max Paragraphs: {options.chunk_max_paragraphs}")
+#     print(f"  - Chunk Overlap: {options.chunk_overlap_paragraphs}")
+#     print()
 
-    # Process the essay
-    try:
-        processed_essay = preprocessor.run(text, options)
+#     # Process the essay
+#     try:
+#         processed_essay = preprocessor.run(text, options)
         
-        # Output results
-        if output_json:
-            print("=== JSON OUTPUT ===")
-            print(processed_essay.to_json())
-        else:
-            print("=== PROCESSING SUMMARY ===")
-            _print_summary(processed_essay)
+#         # Output results
+#         if output_json:
+#             print("=== JSON OUTPUT ===")
+#             print(processed_essay.to_json())
+#         else:
+#             print("=== PROCESSING SUMMARY ===")
+#             _print_summary(processed_essay)
             
-    except Exception as e:
-        print(f"Error during processing: {e}")
-        import traceback
-        traceback.print_exc()
+#     except Exception as e:
+#         print(f"Error during processing: {e}")
+#         import traceback
+#         traceback.print_exc()
